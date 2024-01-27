@@ -141,7 +141,7 @@ void MX_USART6_UART_Init(void){
 	huart6.Init.OneBitSampling = UART_ONEBIT_SAMPLING_DISABLED;
 	huart6.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
 	HAL_UART_Init(&huart6);
-#if _P6pol_reversed
+#if _P1pol_reversed
 		huart6.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT;
 		huart6.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
 	  HAL_UART_Init(&huart6);

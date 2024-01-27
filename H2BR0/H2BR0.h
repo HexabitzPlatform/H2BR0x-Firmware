@@ -31,7 +31,7 @@
 
 
 /* Port-related definitions */
-#define	NumOfPorts			6
+#define	NumOfPorts			5
 
 #define P_PROG 				P2						/* ST factory bootloader UART */
 
@@ -47,14 +47,13 @@
 #define _Usart1 1
 #define _Usart2 1
 #define _Usart3 1
-#define _Usart4 1
+#define _Usart4 0
 #define _Usart5 1
 #define _Usart6	1
 
 
 /* Port-UART mapping */
-
-#define P1uart &huart4
+#define P1uart &huart6
 #define P2uart &huart2
 #define P3uart &huart3
 #define P4uart &huart1
@@ -118,7 +117,7 @@ typedef enum {
 
 /* Indicator LED */
 #define _IND_LED_PORT			GPIOB
-#define _IND_LED_PIN			GPIO_PIN_14
+#define _IND_LED_PIN			GPIO_PIN_7
 
 /* Export UART variables */
 extern UART_HandleTypeDef huart1;
