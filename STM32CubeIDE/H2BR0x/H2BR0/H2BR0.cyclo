@@ -1,0 +1,9 @@
+H2BR0.c:65:6:SystemClock_Config	4
+H2BR0.c:121:9:SaveToRO	14
+H2BR0.c:223:9:ClearROtopology	1
+H2BR0.c:235:6:remoteBootloaderUpdate	7
+H2BR0.c:287:6:SetupPortForRemoteBootloaderUpdate	1
+H2BR0.c:301:6:Module_Peripheral_Init	8
+H2BR0.c:340:15:Module_MessagingTask	1
+H2BR0.c:355:9:GetPort	7
+H2BR0.c:377:6:RegisterModuleCLICommands	1

@@ -24,6 +24,7 @@ extern uint8_t UARTRxBufIndex[NumOfPorts];
 extern TaskHandle_t xCommandConsoleTaskHandle; // CLI Task handler.
 
  TIM_HandleTypeDef htim2;
+ extern DMA_HandleTypeDef hdma_adc1;
 /******************************************************************************/
 /*            Cortex-M0 Processor Interruption and Exception Handlers         */
 /******************************************************************************/
@@ -138,7 +139,7 @@ void DMA1_Ch1_IRQHandler(void){
  */
 void DMA1_Ch2_3_DMA2_Ch1_2_IRQHandler(void){
 	/* Streaming or messaging DMA on P5 */
-	if(HAL_DMA_GET_IT_SOURCE(DMA2,DMA_ISR_GIF2) == SET){
+	if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF2) == SET){
 		DMA_IRQHandler(P2);
 		/* Streaming or messaging DMA on P2 */
 	}
@@ -146,8 +147,8 @@ void DMA1_Ch2_3_DMA2_Ch1_2_IRQHandler(void){
 		DMA_IRQHandler(P3);
 		/* TX messaging DMA 0 */
 	}
-	else if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF2) == SET){
-		HAL_DMA_IRQHandler(&msgTxDMA[0]);
+	else if(HAL_DMA_GET_IT_SOURCE(DMA2,DMA_ISR_GIF1) == SET){
+		HAL_DMA_IRQHandler(&hdma_adc1);;
 	}
 }
 
