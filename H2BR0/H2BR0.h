@@ -98,11 +98,16 @@
 #define	USART6_RX_PORT		GPIOB
 #define	USART6_AF			GPIO_AF8_USART6
 
+
 /* Module-specific Definitions */
 
-#define NUM_MODULE_PARAMS						1
+/* Indicator LED */
+#define _IND_LED_PORT			GPIOB
+#define _IND_LED_PIN			GPIO_PIN_7
 
-/* EXG GPIO Pinout */
+#define NUM_MODULE_PARAMS		1
+
+/* EXG Module GPIO Pinout */
 #define SDN_EXG_Pin             GPIO_PIN_6
 #define SDN_EXG_GPIO_Port       GPIOA
 #define LODP_EXG_Pin            GPIO_PIN_7
@@ -110,12 +115,43 @@
 #define LODN_EXG_Pin            GPIO_PIN_0
 #define LODN_EXG_GPIO_Port      GPIOB
 
-/* Module EEPROM Variables */
+/* EXG Module Special Timer */
+#define EXG_TIM                 TIM2
+#define EXG_TIM_PERIOD          TIM2->ARR
+#define HANDLER_Timer_EXG       htim2
 
+/* EXG Module Special ADC */
+#define HANDLER_ADC_EXG         hadc1
+
+/* EXG Module special parameters */
+#define ADC_VREF                        3.3  //Volt
+#define ADC_NUM_OF_STATES               4095
+#define ECG_SAMPLE_TIME                 8333 //  micro sec	fs=120sps
+#define EOG_SAMPLE_TIME                 10000 // micro sec	fs=100sps
+#define EEG_SAMPLE_TIME                 10000 // micro sec fs=100sps
+#define EMG_SAMPLE_TIME                 2000 //  micro sec fs=500sps
+#define HEART_RATE_MIN                  40    // bpm
+#define HEART_RATE_MAX                  120   // bpm
+#define HEART_RATE_ARRAY_SIZE           5
+#define EMG_MOVING_WINDOW               120   // samples
+#define EMG_EVELOPE_GAIN_FACTOR         2.5   // samples
+#define EMG_PULSE_MIN_THRESHOLD         0.045 // volt
+#define EMG_PULSE_MAX_THRESHOLD         0.25  // volt
+#define EMG_NOISY_PULSE_PERIOD_MS       50
+#define EOG_BLINK_MAX_THRESHOLD         1.87  // volt
+#define EOG_BLINK_MIN_THRESHOLD         1.52  // volt
+#define EOG_NOISY_PULSE_PERIOD_MS       90
+#define EOG_ONE_BLINK_PERIOD_MS         500
+#define ECG_THRESHOLD                   0.25  //  volt
+#define FILTER_TRANSIENT_STATE_SAMPLES  30
+#define SHMITH_SHIFT                    0.03 // volt
+
+
+/* Module EEPROM Variables */
 // Module Addressing Space 500 - 599
 #define _EE_MODULE							500		
 
-/* Module_Status Type Definition */
+/* EXG Module_Status Type Definition */
 typedef enum {
 	H2BR0_OK =0,
 	H2BR0_ERR_UnknownMessage,
@@ -123,10 +159,71 @@ typedef enum {
 	H2BR0_ERROR =255
 } Module_Status;
 
-/* Indicator LED */
-#define _IND_LED_PORT			GPIOB
-#define _IND_LED_PIN			GPIO_PIN_7
+typedef enum{
+	EXG_ENABLED = 0,
+	EXG_DISABLED,
+}StatusType_EXG;
 
+typedef enum{
+	LeadP_CONNECTED_LeadN_CONNECTED        = 1,
+	LeadP_CONNECTED_LeadN_NOTCONNECTED     = 1,
+	LeadP_NOTCONNECTED_LeadN_CONNECTED     = 2,
+	LeadP_NOTCONNECTED_LeadN_NOTCONNECTED  = 3,
+}LeadsStatus_EXG;
+
+typedef enum{
+	ECG = 0,
+	EOG,
+	EEG,
+	EMG,
+}InputSignal_EXG;
+
+typedef enum{
+	NO_BLINK = 0,
+	RIGHT_BLINK,
+	LEFT_BLINK,
+}EyeBlinkingStatus;
+
+typedef struct{
+	StatusType_EXG	EXGStatus;
+	LeadsStatus_EXG statusOfLeads;
+	InputSignal_EXG inputSignalType;
+	uint32_t AdcValue;
+	uint32_t sampleCounter;
+	uint8_t  samplingFlag;
+	float analogSample;
+	float filteredSample;
+	float tempFilterInputBuffer[5];
+	float tempFilterOutputBuffer[5];
+	float ECGBaselineFilteredSample;
+	uint32_t HRCalculationLastTick;
+	uint8_t heartRate;
+	float heartRateArray[HEART_RATE_ARRAY_SIZE];
+	uint8_t  heartRateIndex;
+	uint8_t  heartRateLock;
+	uint16_t previousHeartRate;
+	float EMGRectifiedSample;
+	float EMGEnvelopeSample;
+	float movingWindowBuffer [EMG_MOVING_WINDOW];
+	uint8_t windowBufferIndex;
+	float sumOfSamplesValuesInWindow;
+	uint8_t EMGPulseDetectionFlag;
+	float EMGPulseDetectionThreshold;
+	uint16_t EMGPulseDurationMsec;
+	uint32_t EMGPulseRisingEdgeTick;
+	uint8_t  EMGPulseDetectionLock;
+	EyeBlinkingStatus eyeBlinkStatus;
+	uint8_t  eyeBlinkDetectionFlag;
+	uint16_t EOGPositivePulseDetectionTick;
+	uint16_t EOGNegativePulseDetectionTick;
+	uint8_t  EOGPositivePulseDetectionFlag;
+	uint8_t  EOGNegativePulseDetectionFlag;
+	uint8_t  EOGPositivePulseDetectionLock;
+	uint8_t  EOGNegativePulseDetectionLock;
+}EXG_t;
+
+/* */
+extern EXG_t exg;
 /* Export UART variables */
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
@@ -152,6 +249,7 @@ extern void ExecuteMonitor(void);
 
 void SetupPortForRemoteBootloaderUpdate(uint8_t port);
 void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
+
 
 /* -----------------------------------------------------------------------
  |								Commands							      |															 	|

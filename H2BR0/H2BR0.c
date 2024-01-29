@@ -28,10 +28,12 @@ UART_HandleTypeDef huart6;
 /* Exported variables */
 extern FLASH_ProcessTypeDef pFlash;
 extern uint8_t numOfRecordedSnippets;
-
+EXG_t exg;
 /* Module exported parameters ------------------------------------------------*/
 module_param_t modParam[NUM_MODULE_PARAMS] ={{.paramPtr = NULL, .paramFormat =FMT_FLOAT, .paramName =""}};
 
+/* exported functions */
+void MX_TIM2_Init(void); /* EXG special timer */
 /* Private variables ---------------------------------------------------------*/
 
 
@@ -43,8 +45,8 @@ void ExecuteMonitor(void);
 /*-----------------------------------------------------------*/
 
 /* -----------------------------------------------------------------------
- |												 Private Functions	 														|
- ----------------------------------------------------------------------- 
+ |						    	 Private Functions						 |
+ -------------------------------------------------------------------------
  */
 
 /**
