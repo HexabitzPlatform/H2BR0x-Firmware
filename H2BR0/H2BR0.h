@@ -102,6 +102,14 @@
 
 #define NUM_MODULE_PARAMS						1
 
+/* EXG GPIO Pinout */
+#define SDN_EXG_Pin             GPIO_PIN_6
+#define SDN_EXG_GPIO_Port       GPIOA
+#define LODP_EXG_Pin            GPIO_PIN_7
+#define LODP_EXG_GPIO_Port      GPIOA
+#define LODN_EXG_Pin            GPIO_PIN_0
+#define LODN_EXG_GPIO_Port      GPIOB
+
 /* Module EEPROM Variables */
 
 // Module Addressing Space 500 - 599

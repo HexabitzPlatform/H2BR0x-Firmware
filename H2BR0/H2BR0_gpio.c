@@ -20,6 +20,9 @@ BOS_Status GetPortGPIOs(uint8_t port,uint32_t *TX_Port,uint16_t *TX_Pin,uint32_t
 /** Pinout Configuration
  */
 void GPIO_Init(void){
+
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
 	/* GPIO Ports Clock Enable */
 	__GPIOC_CLK_ENABLE();
 	__GPIOA_CLK_ENABLE();
@@ -28,6 +31,29 @@ void GPIO_Init(void){
 	__GPIOF_CLK_ENABLE();		// for HSE and Boot0
 	
 	IND_LED_Init();
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(SDN_EXG_GPIO_Port, SDN_EXG_Pin, GPIO_PIN_SET);
+
+	/*Configure GPIO pin : PA6 */
+	GPIO_InitStruct.Pin = SDN_EXG_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(SDN_EXG_GPIO_Port, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PA7 */
+	GPIO_InitStruct.Pin = LODP_EXG_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(LODP_EXG_GPIO_Port, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : PB0 */
+	GPIO_InitStruct.Pin = LODN_EXG_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(LODN_EXG_GPIO_Port, &GPIO_InitStruct);
+
 }
 
 //-- Configure indicator LED
