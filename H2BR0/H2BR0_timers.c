@@ -25,7 +25,7 @@ TIM_HandleTypeDef htim16; /* micro-second delay counter */
 TIM_HandleTypeDef htim17; /* milli-second delay counter */
 extern TIM_HandleTypeDef htim2;  /* EXG special timer */
 
-extern void MX_TIM2_Init(void); /* EXG special timer */
+void MX_TIM2_Init(void); /* EXG special timer */
 
 /*  Micro-seconds timebase init function - TIM14 (16-bit)
  */

@@ -199,6 +199,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_timers.c</locationURI>
 		</link>
 		<link>
+			<name>H2BR0/H2BR0_timers.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_timers.h</locationURI>
+		</link>
+		<link>
 			<name>H2BR0/H2BR0_uart.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_uart.c</locationURI>

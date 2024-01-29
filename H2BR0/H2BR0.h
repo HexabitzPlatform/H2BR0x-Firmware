@@ -23,6 +23,8 @@
 #include "H2BR0_uart.h"
 #include "H2BR0_gpio.h"
 #include "H2BR0_dma.h"
+#include "H2BR0_adc.h"
+#include "H2BR0_timers.h"
 #include "H2BR0_inputs.h"
 #include "H2BR0_eeprom.h"
 /* Exported definitions -------------------------------------------------------*/
