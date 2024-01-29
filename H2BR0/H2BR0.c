@@ -28,16 +28,17 @@ UART_HandleTypeDef huart6;
 /* Exported variables */
 extern FLASH_ProcessTypeDef pFlash;
 extern uint8_t numOfRecordedSnippets;
-EXG_t exg;
+
 /* Module exported parameters ------------------------------------------------*/
 module_param_t modParam[NUM_MODULE_PARAMS] ={{.paramPtr = NULL, .paramFormat =FMT_FLOAT, .paramName =""}};
 
 /* exported functions */
-//void MX_TIM2_Init(void); /* EXG special timer */
-/* Private variables ---------------------------------------------------------*/
 
+/* Private variables ---------------------------------------------------------*/
+TaskHandle_t EXGTaskHandle = NULL;
 /* Private function prototypes -----------------------------------------------*/
 void ExecuteMonitor(void);
+void EXGTask(void *argument);
 
 void EXG_Enable(EXG_t *EXGStruct);
 void EXG_Disable(EXG_t *EXGStruct);
@@ -348,8 +349,9 @@ void Module_Peripheral_Init(void){
 		}
 	}
 
-
 	/* Create module special task (if needed) */
+	if(EXGTaskHandle == NULL)
+		xTaskCreate(EXGTask,(const char* ) "EXGTask",configMINIMAL_STACK_SIZE,NULL,osPriorityNormal - osPriorityIdle,&EXGTaskHandle);
 
 }
 
@@ -401,24 +403,24 @@ void RegisterModuleCLICommands(void){
 
 
 /* Module special task function (if needed) */
-//void Module_Special_Task(void *argument){
-//
-//	/* Infinite loop */
-//	uint8_t cases; // Test variable.
-//	for(;;){
-//		/*  */
-//		switch(cases){
-//
-//
-//			default:
-//				osDelay(10);
-//				break;
-//		}
-//
-//		taskYIELD();
-//	}
-//
-//}
+void EXGTask(void *argument){
+
+	/* Infinite loop */
+	uint8_t cases; // Test variable.
+	for(;;){
+		/*  */
+		switch(cases){
+
+
+			default:
+				osDelay(10);
+				break;
+		}
+
+		taskYIELD();
+	}
+
+}
 
 
 /*-----------------------------------------------------------*/
@@ -762,7 +764,7 @@ void EyeBlinkDetection(EXG_t *EXGStruct)
 }
 
 /* -----------------------------------------------------------------------
- |								  APIs							          | 																 	|
+ |								  APIs							          |
 /* -----------------------------------------------------------------------
  */
 /* */

@@ -225,7 +225,7 @@ typedef struct{
 }EXG_t;
 
 /* Export Module typedef structure */
-extern EXG_t exg;
+
 
 /* Export UART variables */
 extern UART_HandleTypeDef huart1;
@@ -246,7 +246,7 @@ extern void SystemClock_Config(void);
 extern void ExecuteMonitor(void);
 
 /* -----------------------------------------------------------------------
- |								  APIs							          |  																 	|
+ |								  APIs							          ||
 /* -----------------------------------------------------------------------
  */
 
@@ -266,7 +266,7 @@ Module_Status CheckEyeBlink(EXG_t *EXGStruct, EyeBlinkingStatus *eyeBlinkStatus)
 Module_Status PlotToTerminal(EXG_t *EXGStruct, UART_HandleTypeDef *huart);
 Module_Status LeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus);
 /* -----------------------------------------------------------------------
- |								Commands							      |															 	|
+ |								Commands							      ||
 /* -----------------------------------------------------------------------
  */
 
