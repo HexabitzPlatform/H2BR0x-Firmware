@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.2.9 - Copyright (C) 2017-2023 Hexabitz
+ BitzOS (BOS) V0.3.1 - Copyright (C) 2017-2024 Hexabitz
  All rights reserved
 
  File Name     : H2BR0.c
@@ -322,9 +322,9 @@ void Module_Peripheral_Init(void){
 		} else if (GetUart(i) == &huart4) {
 			index_dma[i - 1] = &(DMA1_Channel4->CNDTR);
 		} else if (GetUart(i) == &huart5) {
-			index_dma[i - 1] = &(DMA1_Channel5->CNDTR);
+			index_dma[i - 1] = &(DMA1_Channel4->CNDTR);
 		} else if (GetUart(i) == &huart6) {
-			index_dma[i - 1] = &(DMA1_Channel6->CNDTR);
+			index_dma[i - 1] = &(DMA1_Channel5->CNDTR);
 		}
 	}
 

@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.2.9 - Copyright (C) 2017-2022 Hexabitz
+ BitzOS (BOS) V0.3.1 - Copyright (C) 2017-2024 Hexabitz
  All rights reserved
 
  File Name     : H2BR0_timers.c
