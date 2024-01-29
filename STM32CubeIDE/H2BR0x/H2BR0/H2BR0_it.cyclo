@@ -12,3 +12,4 @@ H2BR0_it.c:197:6:HAL_UART_ErrorCallback	2
 H2BR0_it.c:220:6:HAL_UART_RxCpltCallback	1
 H2BR0_it.c:303:6:vApplicationStackOverflowHook	0
 H2BR0_it.c:325:6:vApplicationMallocFailedHook	0
+H2BR0_it.c:338:6:TIM2_IRQHandler	1
