@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.2.9 - Copyright (C) 2017-2023 Hexabitz
+ BitzOS (BOS) V0.3.1 - Copyright (C) 2017-2024 Hexabitz
  All rights reserved
  
  File Name     : H2BR0.h
@@ -222,8 +222,9 @@ typedef struct{
 	uint8_t  EOGNegativePulseDetectionLock;
 }EXG_t;
 
-/* */
+/* Export Module typedef structure */
 extern EXG_t exg;
+
 /* Export UART variables */
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
@@ -250,7 +251,18 @@ extern void ExecuteMonitor(void);
 void SetupPortForRemoteBootloaderUpdate(uint8_t port);
 void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 
-
+Module_Status EXG_Init(EXG_t *EXGStruct ,InputSignal_EXG inputSignal);
+Module_Status EXG_SignalProcessing(EXG_t *EXGStruct);
+Module_Status ECG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample );
+Module_Status EOG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample );
+Module_Status EEG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample );
+Module_Status EMG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample);
+Module_Status EMG_SetThreshold(EXG_t *EXGStruct, uint8_t threshold);
+Module_Status EMG_CheckPulse(EXG_t *EXGStruct, uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
+Module_Status ECG_HeartRate(EXG_t *EXGStruct, uint8_t *heartRate);
+Module_Status CheckEyeBlink(EXG_t *EXGStruct, EyeBlinkingStatus *eyeBlinkStatus); // EOG
+Module_Status PlotToTerminal(EXG_t *EXGStruct, UART_HandleTypeDef *huart);
+Module_Status LeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus);
 /* -----------------------------------------------------------------------
  |								Commands							      |															 	|
 /* -----------------------------------------------------------------------

@@ -36,9 +36,26 @@ module_param_t modParam[NUM_MODULE_PARAMS] ={{.paramPtr = NULL, .paramFormat =FM
 void MX_TIM2_Init(void); /* EXG special timer */
 /* Private variables ---------------------------------------------------------*/
 
-
 /* Private function prototypes -----------------------------------------------*/
 void ExecuteMonitor(void);
+
+void EXG_Enable(EXG_t *EXGStruct);
+void EXG_Disable(EXG_t *EXGStruct);
+void EXG_Reset(EXG_t *EXGStruct);
+void GetSamplingFlag(EXG_t *EXGStruct, uint8_t *samplingFlag);
+void ResetSamplingFlag(EXG_t *EXGStruct);
+void SetSamplingFlag(EXG_t *EXGStruct);
+void ECG_Filter(EXG_t *EXGStruct);
+void ECG_BaselineFilter(EXG_t *EXGStruct);
+void ECG_HeartRateCalculation(EXG_t *EXGStruct);
+void EOG_Filter(EXG_t *EXGStruct);
+void EEG_Filter(EXG_t *EXGStruct);
+void EMG_Filter(EXG_t *EXGStruct);
+void EyeBlinkDetection(EXG_t *EXGStruct);
+void EMG_Rectifying(EXG_t *EXGStruct);
+void EMG_EnvelopeDetection(EXG_t *EXGStruct);
+void CheckLeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus);
+
 
 /* Create CLI commands --------------------------------------------------------*/
 
