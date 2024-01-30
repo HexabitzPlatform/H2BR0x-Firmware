@@ -770,7 +770,7 @@ void EyeBlinkDetection(EXG_t *EXGStruct)
 /* */
 Module_Status EXG_Init(EXG_t *EXGStruct ,InputSignal_EXG inputSignal)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 
 	EXG_Enable(EXGStruct);
 	switch (inputSignal)
@@ -798,20 +798,21 @@ Module_Status EXG_Init(EXG_t *EXGStruct ,InputSignal_EXG inputSignal)
 			break;
 
 		default:
-			STATUS = HAL_ERROR;
+			status = H2BR0_ERR_WrongParams;
 			break;
 	}
-	HAL_Delay(2000);  // avoiding transient state when module is power on
-	STATUS = HAL_TIM_Base_Start_IT(&HANDLER_Timer_EXG);
-	STATUS = HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(EXGStruct->AdcValue), 1);
-	return STATUS;
+	Delay_ms(2000);  // avoiding transient state when module is power on
+	HAL_TIM_Base_Start_IT(&HANDLER_Timer_EXG);
+	HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(EXGStruct->AdcValue), 1);
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status EXG_SignalProcessing(EXG_t *EXGStruct)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	LeadsStatus_EXG leadsStatus;
 	CheckLeadsStatus(EXGStruct, &leadsStatus);
 	if (leadsStatus == LeadP_CONNECTED_LeadN_CONNECTED)
@@ -851,17 +852,20 @@ Module_Status EXG_SignalProcessing(EXG_t *EXGStruct)
 				break;
 
 			default:
-				STATUS = HAL_ERROR;
+				status = H2BR0_ERR_WrongParams;
 		}
 	}
-	return STATUS;
+	else
+		status = H2BR0_ERR_LEADS_NOTCONNECTED;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status EMG_SetThreshold(EXG_t *EXGStruct, uint8_t threshold)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == EMG)
 	{
 		if (threshold > 100)
@@ -869,15 +873,17 @@ Module_Status EMG_SetThreshold(EXG_t *EXGStruct, uint8_t threshold)
 		float voltThreshold = ((EMG_PULSE_MAX_THRESHOLD - EMG_PULSE_MIN_THRESHOLD)/ 100.0) * (float)threshold  + EMG_PULSE_MIN_THRESHOLD; // mapping from [0,100] to [EMG_PULSE_MIN_THRESHOLD, EMG_PULSE_MAX_THRESHOLD]
 		EXGStruct->EMGPulseDetectionThreshold = voltThreshold;
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status EMG_CheckPulse(EXG_t *EXGStruct, uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == EMG)
 	{
 		*EMGDetectionFlag = EXGStruct->EMGPulseDetectionFlag;
@@ -887,72 +893,82 @@ Module_Status EMG_CheckPulse(EXG_t *EXGStruct, uint8_t *EMGDetectionFlag, uint16
 			EXGStruct->EMGPulseDetectionFlag = 0;
 		}
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status CheckEyeBlink(EXG_t *EXGStruct, EyeBlinkingStatus *eyeBlinkStatus)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == EOG)
 	{
 		*eyeBlinkStatus = EXGStruct->eyeBlinkStatus;
 		if (*eyeBlinkStatus != NO_BLINK)
 			EXGStruct->eyeBlinkStatus = NO_BLINK;
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status ECG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample )
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == ECG)
 	{
 		*sample = EXGStruct->analogSample;
 		*filteredSample = EXGStruct->filteredSample;
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status EOG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample )
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == EOG)
 	{
 		*sample = EXGStruct->analogSample;
 		*filteredSample = EXGStruct->filteredSample;
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status EEG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample )
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == EEG)
 	{
 		*sample = EXGStruct->analogSample;
 		*filteredSample = EXGStruct->filteredSample;
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status EMG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == EMG)
 	{
 		*sample = EXGStruct->analogSample;
@@ -960,26 +976,30 @@ Module_Status EMG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample,
 		*rectifiedSample = EXGStruct->EMGRectifiedSample;
 		*envelopeSample =  EXGStruct->EMGEnvelopeSample;
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status ECG_HeartRate(EXG_t *EXGStruct, uint8_t *heartRate)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	if (EXGStruct->inputSignalType == ECG)
 		*heartRate = EXGStruct->heartRate;
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status PlotToTerminal(EXG_t *EXGStruct, UART_HandleTypeDef *huart)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	char sendData[26];
 	uint8_t samplingFlag;
 	if(EXGStruct->inputSignalType == ECG || EXGStruct->inputSignalType == EOG || EXGStruct->inputSignalType == EEG || EXGStruct->inputSignalType == EMG)
@@ -991,19 +1011,21 @@ Module_Status PlotToTerminal(EXG_t *EXGStruct, UART_HandleTypeDef *huart)
 		if (samplingFlag == 1)
 		{
 			ResetSamplingFlag(EXGStruct);
-			STATUS = HAL_UART_Transmit(huart, sendData, strlen(sendData), 100);
+		    HAL_UART_Transmit(huart, sendData, strlen(sendData), 100);
 		}
 	}
-	else STATUS = HAL_ERROR;
-	return STATUS;
+	else
+		status = H2BR0_ERR_WrongParams;
+
+	return status;
 }
 /*-----------------------------------------------------------*/
 /*  */
 Module_Status LeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus)
 {
-	HAL_StatusTypeDef STATUS = HAL_OK;
+	uint8_t status = H2BR0_OK;
 	*leadsStatus = EXGStruct->statusOfLeads;
-	return STATUS;
+	return status;
 }
 
 /* -----------------------------------------------------------------------

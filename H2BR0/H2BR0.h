@@ -158,6 +158,7 @@ typedef enum {
 	H2BR0_OK =0,
 	H2BR0_ERR_UnknownMessage,
 	H2BR0_ERR_WrongParams,
+	H2BR0_ERR_LEADS_NOTCONNECTED,
 	H2BR0_ERROR =255
 } Module_Status;
 
