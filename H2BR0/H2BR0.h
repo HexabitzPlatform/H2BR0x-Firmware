@@ -226,7 +226,7 @@ typedef struct{
 }EXG_t;
 
 /* Export Module typedef structure */
-
+extern EXG_t exg;
 
 /* Export UART variables */
 extern UART_HandleTypeDef huart1;
@@ -254,18 +254,18 @@ extern void ExecuteMonitor(void);
 void SetupPortForRemoteBootloaderUpdate(uint8_t port);
 void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 
-Module_Status EXG_Init(EXG_t *EXGStruct ,InputSignal_EXG inputSignal);
-Module_Status EXG_SignalProcessing(EXG_t *EXGStruct);
-Module_Status ECG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample );
-Module_Status EOG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample );
-Module_Status EEG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample );
-Module_Status EMG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample);
-Module_Status EMG_SetThreshold(EXG_t *EXGStruct, uint8_t threshold);
-Module_Status EMG_CheckPulse(EXG_t *EXGStruct, uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
-Module_Status ECG_HeartRate(EXG_t *EXGStruct, uint8_t *heartRate);
-Module_Status CheckEyeBlink(EXG_t *EXGStruct, EyeBlinkingStatus *eyeBlinkStatus); // EOG
-Module_Status PlotToTerminal(EXG_t *EXGStruct, UART_HandleTypeDef *huart);
-Module_Status LeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus);
+Module_Status EXG_Init( InputSignal_EXG inputSignal);
+Module_Status EXG_SignalProcessing(void);
+Module_Status ECG_Sample(float *sample, float *filteredSample );
+Module_Status EOG_Sample(float *sample, float *filteredSample );
+Module_Status EEG_Sample(float *sample, float *filteredSample );
+Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample);
+Module_Status EMG_SetThreshold(uint8_t threshold);
+Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
+Module_Status ECG_HeartRate(uint8_t *heartRate);
+Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus); // EOG
+Module_Status PlotToTerminal(UART_HandleTypeDef *huart);
+Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 /* -----------------------------------------------------------------------
  |								Commands							      ||
 /* -----------------------------------------------------------------------

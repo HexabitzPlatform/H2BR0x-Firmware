@@ -31,11 +31,32 @@ extern uint8_t numOfRecordedSnippets;
 
 /* Module exported parameters ------------------------------------------------*/
 module_param_t modParam[NUM_MODULE_PARAMS] ={{.paramPtr = NULL, .paramFormat =FMT_FLOAT, .paramName =""}};
-
+EXG_t exg;
 /* exported functions */
 
 /* Private variables ---------------------------------------------------------*/
 TaskHandle_t EXGTaskHandle = NULL;
+
+uint8_t emgFlag;
+uint16_t emgDurMsec;
+uint8_t heartrate;
+uint32_t x=0;
+uint16_t i;
+uint32_t lasttick;
+uint16_t rightBlinkCounte, leftBlinkCounte;
+
+float ecgSample;
+float ecgFilteredSample;
+float eogSample;
+float eogFilteredSample;
+float emgSample;
+float emgFilteredSample;
+float emgFilteredSample;
+float emgRectifiedSample;
+float emgEnvelopeSample;
+
+
+
 /* Private function prototypes -----------------------------------------------*/
 void ExecuteMonitor(void);
 void EXGTask(void *argument);
@@ -401,14 +422,62 @@ void RegisterModuleCLICommands(void){
 
 /*-----------------------------------------------------------*/
 
-
 /* Module special task function (if needed) */
 void EXGTask(void *argument){
 
+	EyeBlinkingStatus eyeBlinkStatus;
+	LeadsStatus_EXG wiresStatus;
+
 	/* Infinite loop */
 	uint8_t cases; // Test variable.
+
+
 	for(;;){
 		/*  */
+
+//#ifdef ECG_Signal
+/**************** Application for ECG *******************/
+	LeadsStatus(&wiresStatus);
+	PlotToTerminal(&huart3);
+	ECG_HeartRate(&heartrate);
+/****************************************************/
+//#endif
+
+
+//#ifdef EOG_Signal
+/**************** Application for EOG *******************/
+
+	LeadsStatus(&wiresStatus);
+	PlotToTerminal(&huart3);
+	CheckEyeBlink(&eyeBlinkStatus);
+	if(eyeBlinkStatus == RIGHT_BLINK)
+		rightBlinkCounte ++;
+	else if (eyeBlinkStatus == LEFT_BLINK)
+	    leftBlinkCounte ++;
+/****************************************************/
+//#endif
+
+
+//#ifdef EMG_Signal
+/**************** Application for EMG *******************/
+	  EMG_CheckPulse(&emgFlag, &emgDurMsec);
+	  if (emgFlag == 1)
+	  {
+		  if(emgDurMsec>150)
+		  {
+//			  HAL_GPIO_WritePin(GPIOB,MOTOR_CONTROL_Pin, GPIO_PIN_SET);
+			  x=1;
+			  HAL_Delay(5000);
+//			  HAL_GPIO_WritePin(GPIOB,MOTOR_CONTROL_Pin, GPIO_PIN_RESET);
+			  x=0;
+		  }
+	  }
+	  LeadsStatus(&wiresStatus);
+
+/****************************************************/
+//#endif
+
+
 		switch(cases){
 
 
@@ -763,38 +832,52 @@ void EyeBlinkDetection(EXG_t *EXGStruct)
 	}
 }
 
+/*-----------------------------------------------------------*/
+/* timer2 EXG special timer callback */
+void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef* htim)
+{
+
+	if(htim->Instance == EXG_TIM)
+	{
+		SetSamplingFlag(&exg);
+		EXG_SignalProcessing();
+	}
+	x++;
+}
+
 /* -----------------------------------------------------------------------
  |								  APIs							          |
 /* -----------------------------------------------------------------------
  */
-/* */
-Module_Status EXG_Init(EXG_t *EXGStruct ,InputSignal_EXG inputSignal)
+/*       */
+Module_Status EXG_Init(InputSignal_EXG inputSignal)
 {
 	uint8_t status = H2BR0_OK;
 
-	EXG_Enable(EXGStruct);
+	EXG_Enable(&exg);
+
 	switch (inputSignal)
 	{
 		case ECG:
 			EXG_TIM_PERIOD = ECG_SAMPLE_TIME;
-			EXGStruct->inputSignalType = inputSignal;
+			exg.inputSignalType = inputSignal;
 			break;
 
 		case EOG:
 			EXG_TIM_PERIOD = EOG_SAMPLE_TIME;
-			EXGStruct->inputSignalType = inputSignal;
-
+			exg.inputSignalType = inputSignal;
 			break;
 
 		case EEG:
 			EXG_TIM_PERIOD = EEG_SAMPLE_TIME;
-			EXGStruct->inputSignalType = inputSignal;
+			exg.inputSignalType = inputSignal;
 			break;
 
 		case EMG:
 			EXG_TIM_PERIOD = EMG_SAMPLE_TIME;
-			EXGStruct->inputSignalType = inputSignal;
-			EXGStruct->EMGPulseDetectionThreshold = EMG_PULSE_MAX_THRESHOLD; // so that no pulse detected until adjusting threshold by the user
+			exg.inputSignalType = inputSignal;
+			exg.EMGPulseDetectionThreshold = EMG_PULSE_MAX_THRESHOLD;
+			/* so that no pulse detected until adjusting threshold by the user */
 			break;
 
 		default:
@@ -803,51 +886,52 @@ Module_Status EXG_Init(EXG_t *EXGStruct ,InputSignal_EXG inputSignal)
 	}
 	Delay_ms(2000);  // avoiding transient state when module is power on
 	HAL_TIM_Base_Start_IT(&HANDLER_Timer_EXG);
-	HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(EXGStruct->AdcValue), 1);
+	HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(exg.AdcValue), 1);
 
 	return status;
 }
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status EXG_SignalProcessing(EXG_t *EXGStruct)
+Module_Status EXG_SignalProcessing(void)
 {
 	uint8_t status = H2BR0_OK;
 	LeadsStatus_EXG leadsStatus;
-	CheckLeadsStatus(EXGStruct, &leadsStatus);
+	InputSignal_EXG inputSignal;
+
+	CheckLeadsStatus(&exg, &leadsStatus);
+
 	if (leadsStatus == LeadP_CONNECTED_LeadN_CONNECTED)
 	{
-		EXGStruct->analogSample = (float)(EXGStruct->AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
-		InputSignal_EXG inputSignal = EXGStruct->inputSignalType;
+		exg.analogSample = (float)(exg.AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
+		inputSignal = exg.inputSignalType;
 
 		switch (inputSignal)
 		{
 			case ECG:
-				ECG_Filter(EXGStruct);
-				ECG_BaselineFilter(EXGStruct);
-				if(EXGStruct->sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					ECG_HeartRateCalculation(EXGStruct);
-
+				ECG_Filter(&exg);
+				ECG_BaselineFilter(&exg);
+				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+					ECG_HeartRateCalculation(&exg);
 				break;
 
 			case EOG:
-				EOG_Filter(EXGStruct);
-				if(EXGStruct->sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					EyeBlinkDetection(EXGStruct);
-
+				EOG_Filter(&exg);
+				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+					EyeBlinkDetection(&exg);
 				break;
 
 			case EEG:
-				EEG_Filter(EXGStruct);
+				EEG_Filter(&exg);
 				break;
 
 			case EMG:
-				EMG_Filter(EXGStruct);
-				if(EXGStruct->sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+				EMG_Filter(&exg);
+				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
 				{
-					EMG_Rectifying(EXGStruct);
-					EMG_EnvelopeDetection(EXGStruct);
-					EMG_PulseDetection(EXGStruct);
+					EMG_Rectifying(&exg);
+					EMG_EnvelopeDetection(&exg);
+					EMG_PulseDetection(&exg);
 				}
 				break;
 
@@ -863,15 +947,17 @@ Module_Status EXG_SignalProcessing(EXG_t *EXGStruct)
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status EMG_SetThreshold(EXG_t *EXGStruct, uint8_t threshold)
+Module_Status EMG_SetThreshold(uint8_t threshold)
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == EMG)
+	float voltThreshold;
+
+	if (exg.inputSignalType == EMG)
 	{
 		if (threshold > 100)
 			threshold = 100;	// threshold = [0,100]
-		float voltThreshold = ((EMG_PULSE_MAX_THRESHOLD - EMG_PULSE_MIN_THRESHOLD)/ 100.0) * (float)threshold  + EMG_PULSE_MIN_THRESHOLD; // mapping from [0,100] to [EMG_PULSE_MIN_THRESHOLD, EMG_PULSE_MAX_THRESHOLD]
-		EXGStruct->EMGPulseDetectionThreshold = voltThreshold;
+		voltThreshold = ((EMG_PULSE_MAX_THRESHOLD - EMG_PULSE_MIN_THRESHOLD)/ 100.0) * (float)threshold  + EMG_PULSE_MIN_THRESHOLD; // mapping from [0,100] to [EMG_PULSE_MIN_THRESHOLD, EMG_PULSE_MAX_THRESHOLD]
+		exg.EMGPulseDetectionThreshold = voltThreshold;
 	}
 	else
 		status = H2BR0_ERR_WrongParams;
@@ -881,16 +967,17 @@ Module_Status EMG_SetThreshold(EXG_t *EXGStruct, uint8_t threshold)
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status EMG_CheckPulse(EXG_t *EXGStruct, uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec)
+Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec)
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == EMG)
+
+	if (exg.inputSignalType == EMG)
 	{
-		*EMGDetectionFlag = EXGStruct->EMGPulseDetectionFlag;
+		*EMGDetectionFlag = exg.EMGPulseDetectionFlag;
 		if (*EMGDetectionFlag == 1)
 		{
-			*EMGDurationMsec = EXGStruct->EMGPulseDurationMsec;
-			EXGStruct->EMGPulseDetectionFlag = 0;
+			*EMGDurationMsec = exg.EMGPulseDurationMsec;
+			exg.EMGPulseDetectionFlag = 0;
 		}
 	}
 	else
@@ -901,14 +988,15 @@ Module_Status EMG_CheckPulse(EXG_t *EXGStruct, uint8_t *EMGDetectionFlag, uint16
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status CheckEyeBlink(EXG_t *EXGStruct, EyeBlinkingStatus *eyeBlinkStatus)
+Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus)
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == EOG)
+
+	if (exg.inputSignalType == EOG)
 	{
-		*eyeBlinkStatus = EXGStruct->eyeBlinkStatus;
+		*eyeBlinkStatus = exg.eyeBlinkStatus;
 		if (*eyeBlinkStatus != NO_BLINK)
-			EXGStruct->eyeBlinkStatus = NO_BLINK;
+			exg.eyeBlinkStatus = NO_BLINK;
 	}
 	else
 		status = H2BR0_ERR_WrongParams;
@@ -918,13 +1006,14 @@ Module_Status CheckEyeBlink(EXG_t *EXGStruct, EyeBlinkingStatus *eyeBlinkStatus)
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status ECG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample )
+Module_Status ECG_Sample(float *sample, float *filteredSample )
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == ECG)
+
+	if (exg.inputSignalType == ECG)
 	{
-		*sample = EXGStruct->analogSample;
-		*filteredSample = EXGStruct->filteredSample;
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
 	}
 	else
 		status = H2BR0_ERR_WrongParams;
@@ -934,13 +1023,14 @@ Module_Status ECG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample 
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status EOG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample )
+Module_Status EOG_Sample(float *sample, float *filteredSample )
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == EOG)
+
+	if (exg.inputSignalType == EOG)
 	{
-		*sample = EXGStruct->analogSample;
-		*filteredSample = EXGStruct->filteredSample;
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
 	}
 	else
 		status = H2BR0_ERR_WrongParams;
@@ -950,13 +1040,14 @@ Module_Status EOG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample 
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status EEG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample )
+Module_Status EEG_Sample(float *sample, float *filteredSample )
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == EEG)
+
+	if (exg.inputSignalType == EEG)
 	{
-		*sample = EXGStruct->analogSample;
-		*filteredSample = EXGStruct->filteredSample;
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
 	}
 	else
 		status = H2BR0_ERR_WrongParams;
@@ -966,15 +1057,16 @@ Module_Status EEG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample 
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status EMG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample)
+Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample)
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == EMG)
+
+	if (exg.inputSignalType == EMG)
 	{
-		*sample = EXGStruct->analogSample;
-		*filteredSample = EXGStruct->filteredSample;
-		*rectifiedSample = EXGStruct->EMGRectifiedSample;
-		*envelopeSample =  EXGStruct->EMGEnvelopeSample;
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
+		*rectifiedSample = exg.EMGRectifiedSample;
+		*envelopeSample =  exg.EMGEnvelopeSample;
 	}
 	else
 		status = H2BR0_ERR_WrongParams;
@@ -984,11 +1076,12 @@ Module_Status EMG_Sample(EXG_t *EXGStruct, float *sample, float *filteredSample,
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status ECG_HeartRate(EXG_t *EXGStruct, uint8_t *heartRate)
+Module_Status ECG_HeartRate(uint8_t *heartRate)
 {
 	uint8_t status = H2BR0_OK;
-	if (EXGStruct->inputSignalType == ECG)
-		*heartRate = EXGStruct->heartRate;
+
+	if (exg.inputSignalType == ECG)
+		*heartRate = exg.heartRate;
 	else
 		status = H2BR0_ERR_WrongParams;
 
@@ -997,20 +1090,24 @@ Module_Status ECG_HeartRate(EXG_t *EXGStruct, uint8_t *heartRate)
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status PlotToTerminal(EXG_t *EXGStruct, UART_HandleTypeDef *huart)
+Module_Status PlotToTerminal(UART_HandleTypeDef *huart)
 {
 	uint8_t status = H2BR0_OK;
-	char sendData[26];
 	uint8_t samplingFlag;
-	if(EXGStruct->inputSignalType == ECG || EXGStruct->inputSignalType == EOG || EXGStruct->inputSignalType == EEG || EXGStruct->inputSignalType == EMG)
+	char sendData[26];
+
+	if(exg.inputSignalType == ECG || exg.inputSignalType == EOG || exg.inputSignalType == EEG || exg.inputSignalType == EMG)
 	{
-		if(EXGStruct->inputSignalType == EMG)
-			sprintf(sendData, "a%5.2fb%5.2fc%5.2fd%5.2f\n",EXGStruct->analogSample, EXGStruct->filteredSample, EXGStruct->EMGRectifiedSample, EXGStruct->EMGEnvelopeSample);
-		else sprintf(sendData, "a%5.2fb%5.2f\n", EXGStruct->analogSample, EXGStruct->filteredSample);
-		GetSamplingFlag(EXGStruct, &samplingFlag);
+		if(exg.inputSignalType == EMG)
+			sprintf(sendData, "a%5.2fb%5.2fc%5.2fd%5.2f\n",exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample, exg.EMGEnvelopeSample);
+		else
+			sprintf(sendData, "a%5.2fb%5.2f\n", exg.analogSample, exg.filteredSample);
+
+		GetSamplingFlag(&exg, &samplingFlag);
+
 		if (samplingFlag == 1)
 		{
-			ResetSamplingFlag(EXGStruct);
+			ResetSamplingFlag(&exg);
 		    HAL_UART_Transmit(huart, sendData, strlen(sendData), 100);
 		}
 	}
@@ -1019,12 +1116,14 @@ Module_Status PlotToTerminal(EXG_t *EXGStruct, UART_HandleTypeDef *huart)
 
 	return status;
 }
+
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status LeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus)
+Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus)
 {
 	uint8_t status = H2BR0_OK;
-	*leadsStatus = EXGStruct->statusOfLeads;
+
+	*leadsStatus = exg.statusOfLeads;
 	return status;
 }
 
