@@ -218,7 +218,6 @@ typedef struct{
 }EXG_t;
 
 /* Export Module typedef structure */
-extern EXG_t exg;
 
 /* Export UART variables */
 extern UART_HandleTypeDef huart1;
@@ -244,7 +243,7 @@ extern void ExecuteMonitor(void);
 void SetupPortForRemoteBootloaderUpdate(uint8_t port);
 void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 
-Module_Status EXG_Init( InputSignal_EXG inputSignal);
+Module_Status EXG_Init(InputSignal_EXG inputSignal);
 Module_Status EXG_SignalProcessing(void);
 Module_Status ECG_Sample(float *sample, float *filteredSample );
 Module_Status EOG_Sample(float *sample, float *filteredSample );

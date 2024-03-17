@@ -60,22 +60,22 @@ float emgEnvelopeSample;
 void ExecuteMonitor(void);
 void EXGTask(void *argument);
 
-void EXG_Enable(EXG_t *EXGStruct);
-void EXG_Disable(EXG_t *EXGStruct);
-void EXG_Reset(EXG_t *EXGStruct);
-void GetSamplingFlag(EXG_t *EXGStruct, uint8_t *samplingFlag);
-void ResetSamplingFlag(EXG_t *EXGStruct);
-void SetSamplingFlag(EXG_t *EXGStruct);
-void ECG_Filter(EXG_t *EXGStruct);
-void ECG_BaselineFilter(EXG_t *EXGStruct);
-void ECG_HeartRateCalculation(EXG_t *EXGStruct);
-void EOG_Filter(EXG_t *EXGStruct);
-void EEG_Filter(EXG_t *EXGStruct);
-void EMG_Filter(EXG_t *EXGStruct);
-void EyeBlinkDetection(EXG_t *EXGStruct);
-void EMG_Rectifying(EXG_t *EXGStruct);
-void EMG_EnvelopeDetection(EXG_t *EXGStruct);
-void CheckLeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus);
+void EXG_Enable();
+void EXG_Disable();
+void EXG_Reset();
+void GetSamplingFlag(uint8_t *samplingFlag);
+void ResetSamplingFlag();
+void SetSamplingFlag();
+void ECG_Filter();
+void ECG_BaselineFilter();
+void ECG_HeartRateCalculation();
+void EOG_Filter();
+void EEG_Filter();
+void EMG_Filter();
+void EyeBlinkDetection();
+void EMG_Rectifying();
+void EMG_EnvelopeDetection();
+void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus);
 
 
 /* Create CLI commands --------------------------------------------------------*/
@@ -486,41 +486,41 @@ void EXGTask(void *argument){
  |							 	Local  APIs			    		          | 																 	|
 /* -----------------------------------------------------------------------
  */
-void EXG_Enable(EXG_t *EXGStruct)
+void EXG_Enable()
 {
 	HAL_GPIO_WritePin(SDN_EXG_GPIO_Port, SDN_EXG_Pin, GPIO_PIN_SET);
-	EXGStruct->EXGStatus = EXG_ENABLED;
+	exg.EXGStatus = EXG_ENABLED;
 }
 /*-----------------------------------------------------------*/
-void EXG_Disable(EXG_t *EXGStruct)
+void EXG_Disable()
 {
 	HAL_GPIO_WritePin(SDN_EXG_GPIO_Port, SDN_EXG_Pin, GPIO_PIN_RESET);
-	EXGStruct->EXGStatus = EXG_DISABLED;
+	exg.EXGStatus = EXG_DISABLED;
 }
 /*-----------------------------------------------------------*/
-void EXG_Reset(EXG_t *EXGStruct)
+void EXG_Reset()
 {
-	EXG_Disable(EXGStruct);
+	EXG_Disable();
 	HAL_Delay(10);
-	EXG_Enable(EXGStruct);
+	EXG_Enable();
 }
 /*-----------------------------------------------------------*/
-void GetSamplingFlag(EXG_t *EXGStruct, uint8_t *samplingFlag)
+void GetSamplingFlag(uint8_t *samplingFlag)
 {
-	*samplingFlag = EXGStruct->samplingFlag;
+	*samplingFlag =exg.samplingFlag;
 }
 /*-----------------------------------------------------------*/
-void ResetSamplingFlag(EXG_t *EXGStruct)
+void ResetSamplingFlag()
 {
-	EXGStruct->samplingFlag = 0;
+	exg.samplingFlag = 0;
 }
 /*-----------------------------------------------------------*/
-void SetSamplingFlag(EXG_t *EXGStruct)
+void SetSamplingFlag()
 {
-	EXGStruct->samplingFlag = 1;
+	exg.samplingFlag = 1;
 }
 /*-----------------------------------------------------------*/
-void CheckLeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus)
+void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus)
 {
 	GPIO_PinState LODPStatus;
 	GPIO_PinState LODNStatus;
@@ -533,289 +533,289 @@ void CheckLeadsStatus(EXG_t *EXGStruct, LeadsStatus_EXG *leadsStatus)
 	else if (LODPStatus == GPIO_PIN_SET && LODNStatus == GPIO_PIN_RESET)
 		*leadsStatus = LeadP_NOTCONNECTED_LeadN_CONNECTED;
 	else *leadsStatus = LeadP_NOTCONNECTED_LeadN_NOTCONNECTED;
-	EXGStruct->statusOfLeads = *leadsStatus;
+	exg.statusOfLeads = *leadsStatus;
 }
 /*-----------------------------------------------------------*/
-void ECG_Filter(EXG_t *EXGStruct)
+void ECG_Filter()
 {
-	float input1 = EXGStruct->analogSample;
-	float preInput1 = EXGStruct->tempFilterInputBuffer[0];
-	float beforePreInput1 = EXGStruct->tempFilterInputBuffer[1];
+	float input1 = exg.analogSample;
+	float preInput1 = exg.tempFilterInputBuffer[0];
+	float beforePreInput1 = exg.tempFilterInputBuffer[1];
 	float output1;
-	float preOutput1 = EXGStruct->tempFilterOutputBuffer[0];
-	float beforePreOutput1 = EXGStruct->tempFilterOutputBuffer[1];
+	float preOutput1 = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput1 = exg.tempFilterOutputBuffer[1];
 	// LPF: Fs=120sps, Fc=40Hz, Order=2
 	output1= -0.6202 * preOutput1 - 0.2404 * beforePreOutput1 + 0.4652 * input1 + 0.9303 * preInput1 + 0.4652 * beforePreInput1;
 	beforePreInput1 = preInput1;
 	preInput1 = input1;
 	beforePreOutput1 = preOutput1;
 	preOutput1= output1;
-	EXGStruct->tempFilterInputBuffer[0] = preInput1;
-	EXGStruct->tempFilterInputBuffer[1] = beforePreInput1;
-	EXGStruct->tempFilterOutputBuffer[0] = preOutput1;
-	EXGStruct->tempFilterOutputBuffer[1] = beforePreOutput1;
+	exg.tempFilterInputBuffer[0] = preInput1;
+	exg.tempFilterInputBuffer[1] = beforePreInput1;
+	exg.tempFilterOutputBuffer[0] = preOutput1;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput1;
 
 	float input2 = output1;
-	float preInput2 = EXGStruct->tempFilterInputBuffer[2];
-	float beforePreInput2 = EXGStruct->tempFilterInputBuffer[3];
+	float preInput2 = exg.tempFilterInputBuffer[2];
+	float beforePreInput2 = exg.tempFilterInputBuffer[3];
 	float output2;
-	float preOutput2 = EXGStruct->tempFilterOutputBuffer[2];
-	float beforePreOutput2 = EXGStruct->tempFilterOutputBuffer[3];
+	float preOutput2 = exg.tempFilterOutputBuffer[2];
+	float beforePreOutput2 = exg.tempFilterOutputBuffer[3];
 	// LPF: Fs=120sps, Fc=40Hz, Order=2
 	output2= -0.6202 * preOutput2 - 0.2404 * beforePreOutput2 + 0.4652 * input2 + 0.9303 * preInput2 + 0.4652 * beforePreInput2;
 	beforePreInput2 = preInput2;
 	preInput2 = input2;
 	beforePreOutput2 = preOutput2;
 	preOutput2= output2;
-	EXGStruct->tempFilterInputBuffer[2] = preInput2;
-	EXGStruct->tempFilterInputBuffer[3] = beforePreInput2;
-	EXGStruct->tempFilterOutputBuffer[2] = preOutput2;
-	EXGStruct->tempFilterOutputBuffer[3] = beforePreOutput2;
-	EXGStruct->filteredSample = output2;
+	exg.tempFilterInputBuffer[2] = preInput2;
+	exg.tempFilterInputBuffer[3] = beforePreInput2;
+	exg.tempFilterOutputBuffer[2] = preOutput2;
+	exg.tempFilterOutputBuffer[3] = beforePreOutput2;
+	exg.filteredSample = output2;
 }
 /*-----------------------------------------------------------*/
-void EOG_Filter(EXG_t *EXGStruct)
+void EOG_Filter()
 {
-	float input = EXGStruct->analogSample;
-	float preInput = EXGStruct->tempFilterInputBuffer[0];
-	float beforePreInput = EXGStruct->tempFilterInputBuffer[1];
+	float input = exg.analogSample;
+	float preInput = exg.tempFilterInputBuffer[0];
+	float beforePreInput = exg.tempFilterInputBuffer[1];
 	float output;
-	float preOutput = EXGStruct->tempFilterOutputBuffer[0];
-	float beforePreOutput = EXGStruct->tempFilterOutputBuffer[1];
+	float preOutput = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput = exg.tempFilterOutputBuffer[1];
 	// LPF: Fs=100sps, Fc=25Hz, Order=2
 	output= -0.0 * preOutput - 0.1716 * beforePreOutput + 0.2929 * input + 0.5858 * preInput + 0.2929 * beforePreInput;
 	beforePreInput = preInput;
 	preInput = input;
 	beforePreOutput = preOutput;
 	preOutput= output;
-	EXGStruct->tempFilterInputBuffer[0] = preInput;
-	EXGStruct->tempFilterInputBuffer[1] = beforePreInput;
-	EXGStruct->tempFilterOutputBuffer[0] = preOutput;
-	EXGStruct->tempFilterOutputBuffer[1] = beforePreOutput;
-	EXGStruct->filteredSample = output;
+	exg.tempFilterInputBuffer[0] = preInput;
+	exg.tempFilterInputBuffer[1] = beforePreInput;
+	exg.tempFilterOutputBuffer[0] = preOutput;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput;
+	exg.filteredSample = output;
 }
 /*-----------------------------------------------------------*/
-void EEG_Filter(EXG_t *EXGStruct)
+void EEG_Filter()
 {
-	float input = EXGStruct->analogSample;
-	float preInput = EXGStruct->tempFilterInputBuffer[0];
-	float beforePreInput = EXGStruct->tempFilterInputBuffer[1];
+	float input = exg.analogSample;
+	float preInput = exg.tempFilterInputBuffer[0];
+	float beforePreInput = exg.tempFilterInputBuffer[1];
 	float output;
-	float preOutput = EXGStruct->tempFilterOutputBuffer[0];
-	float beforePreOutput = EXGStruct->tempFilterOutputBuffer[1];
+	float preOutput = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput = exg.tempFilterOutputBuffer[1];
 	// LPF: Fs=100sps, Fc=30Hz, Order=2
 	output= -0.3695 * preOutput - 0.1958 * beforePreOutput + 0.3913 * input + 0.7827 * preInput + 0.3913 * beforePreInput;
 	beforePreInput = preInput;
 	preInput = input;
 	beforePreOutput = preOutput;
 	preOutput= output;
-	EXGStruct->tempFilterInputBuffer[0] = preInput;
-	EXGStruct->tempFilterInputBuffer[1] = beforePreInput;
-	EXGStruct->tempFilterOutputBuffer[0] = preOutput;
-	EXGStruct->tempFilterOutputBuffer[1] = beforePreOutput;
-	EXGStruct->filteredSample = output;
+	exg.tempFilterInputBuffer[0] = preInput;
+	exg.tempFilterInputBuffer[1] = beforePreInput;
+	exg.tempFilterOutputBuffer[0] = preOutput;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput;
+	exg.filteredSample = output;
 }
 /*-----------------------------------------------------------*/
-void EMG_Filter(EXG_t *EXGStruct)
+void EMG_Filter()
 {
-	float input1 = EXGStruct->analogSample;
-	float preInput1 = EXGStruct->tempFilterInputBuffer[0];
-	float beforePreInput1 = EXGStruct->tempFilterInputBuffer[1];
+	float input1 = exg.analogSample;
+	float preInput1 = exg.tempFilterInputBuffer[0];
+	float beforePreInput1 = exg.tempFilterInputBuffer[1];
 	float output1;
-	float preOutput1 = EXGStruct->tempFilterOutputBuffer[0];
-	float beforePreOutput1 = EXGStruct->tempFilterOutputBuffer[1];
+	float preOutput1 = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput1 = exg.tempFilterOutputBuffer[1];
 	// LPF: Fs=500sps, Fc=150Hz, Order=2
 	output1= -0.3695 * preOutput1 - 0.1958 * beforePreOutput1 + 0.3913 * input1 + 0.7827 * preInput1 + 0.3913 * beforePreInput1;
 	beforePreInput1 = preInput1;
 	preInput1 = input1;
 	beforePreOutput1 = preOutput1;
 	preOutput1= output1;
-	EXGStruct->tempFilterInputBuffer[0] = preInput1;
-	EXGStruct->tempFilterInputBuffer[1] = beforePreInput1;
-	EXGStruct->tempFilterOutputBuffer[0] = preOutput1;
-	EXGStruct->tempFilterOutputBuffer[1] = beforePreOutput1;
+	exg.tempFilterInputBuffer[0] = preInput1;
+	exg.tempFilterInputBuffer[1] = beforePreInput1;
+	exg.tempFilterOutputBuffer[0] = preOutput1;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput1;
 
 	float input2 = output1;
-	float preInput2 = EXGStruct->tempFilterInputBuffer[2];
-	float beforePreInput2 = EXGStruct->tempFilterInputBuffer[3];
+	float preInput2 = exg.tempFilterInputBuffer[2];
+	float beforePreInput2 = exg.tempFilterInputBuffer[3];
 	float output2;
-	float preOutput2 = EXGStruct->tempFilterOutputBuffer[2];
-	float beforePreOutput2 = EXGStruct->tempFilterOutputBuffer[3];
+	float preOutput2 = exg.tempFilterOutputBuffer[2];
+	float beforePreOutput2 = exg.tempFilterOutputBuffer[3];
 	// HPF: Fs=500sps, Fc=20Hz, Order=2
 	output2= 1.6475 * preOutput2 - 0.7009 * beforePreOutput2 + 0.8371 * input2 - 1.6742 * preInput2 + 0.8371 * beforePreInput2;
 	beforePreInput2 = preInput2;
 	preInput2 = input2;
 	beforePreOutput2 = preOutput2;
 	preOutput2= output2;
-	EXGStruct->tempFilterInputBuffer[2] = preInput2;
-	EXGStruct->tempFilterInputBuffer[3] = beforePreInput2;
-	EXGStruct->tempFilterOutputBuffer[2] = preOutput2;
-	EXGStruct->tempFilterOutputBuffer[3] = beforePreOutput2;
-	EXGStruct->filteredSample = output2;
+	exg.tempFilterInputBuffer[2] = preInput2;
+	exg.tempFilterInputBuffer[3] = beforePreInput2;
+	exg.tempFilterOutputBuffer[2] = preOutput2;
+	exg.tempFilterOutputBuffer[3] = beforePreOutput2;
+	exg.filteredSample = output2;
 }
 /*-----------------------------------------------------------*/
-void ECG_BaselineFilter(EXG_t *EXGStruct)
+void ECG_BaselineFilter()
 {
-	float input = EXGStruct->filteredSample;
-	float preInput = EXGStruct->tempFilterInputBuffer[4];
+	float input = exg.filteredSample;
+	float preInput = exg.tempFilterInputBuffer[4];
 	float output;
-	float preOutput = EXGStruct->tempFilterOutputBuffer[4];
+	float preOutput = exg.tempFilterOutputBuffer[4];
 
 	// HPF: Fs=120sps, Fc=7Hz, Order=1
 	output= 0.6873 * preOutput + 0.8436 * input - 0.8436 * preInput;
 	preInput = input;
 	preOutput= output;
-	EXGStruct->tempFilterInputBuffer[4] = preInput;
-	EXGStruct->tempFilterOutputBuffer[4] = preOutput;
-	EXGStruct->ECGBaselineFilteredSample = output;
+	exg.tempFilterInputBuffer[4] = preInput;
+	exg.tempFilterOutputBuffer[4] = preOutput;
+	exg.ECGBaselineFilteredSample = output;
 }
 /*-----------------------------------------------------------*/
-void ECG_HeartRateCalculation(EXG_t *EXGStruct)
+void ECG_HeartRateCalculation()
 {
-	float input = EXGStruct->ECGBaselineFilteredSample;
+	float input = exg.ECGBaselineFilteredSample;
 	uint16_t period;
 	float HR;
 	float heartRateSum = 0;
-	if (input >= ECG_THRESHOLD && EXGStruct->heartRateLock == 0)
+	if (input >= ECG_THRESHOLD && exg.heartRateLock == 0)
 	{
-		EXGStruct->heartRateLock = 1;
-		period = HAL_GetTick() - EXGStruct->HRCalculationLastTick;    // find time between tow beats in msec.
+		exg.heartRateLock = 1;
+		period = HAL_GetTick() - exg.HRCalculationLastTick;    // find time between tow beats in msec.
 		HR = 60000.0 / (float)period;
 		if(HR >= HEART_RATE_MIN && HR <= HEART_RATE_MAX)
 		{
 			// if relative change between current HR and old HR within specific range, send HR else ignore sending current value (there is noise)
-			if ((HR >= 0.8 * EXGStruct->previousHeartRate) && (HR <= 1.2 * EXGStruct->previousHeartRate))
+			if ((HR >= 0.8 * exg.previousHeartRate) && (HR <= 1.2 * exg.previousHeartRate))
 				{
-					EXGStruct->heartRateArray[EXGStruct->heartRateIndex ++] = HR;
-					if(EXGStruct->heartRateIndex == HEART_RATE_ARRAY_SIZE)
+				exg.heartRateArray[exg.heartRateIndex ++] = HR;
+					if(exg.heartRateIndex == HEART_RATE_ARRAY_SIZE)
 					{
-						EXGStruct->heartRateIndex = 0;
+						exg.heartRateIndex = 0;
 						for (uint8_t i=0; i<HEART_RATE_ARRAY_SIZE; i++)
-							heartRateSum += EXGStruct->heartRateArray[i];
-						EXGStruct->heartRate = roundf (heartRateSum / HEART_RATE_ARRAY_SIZE);
+							heartRateSum += exg.heartRateArray[i];
+						exg.heartRate = roundf (heartRateSum / HEART_RATE_ARRAY_SIZE);
 					}
 				}
 		}
 		else
 		{
 			HR = 0;
-			EXGStruct->heartRate = HR;
-			EXGStruct->heartRateIndex = 0;  // empty heartRateArray when happening wrong heart rate
+			exg.heartRate = HR;
+			exg.heartRateIndex = 0;  // empty heartRateArray when happening wrong heart rate
 		}
-		EXGStruct->previousHeartRate = HR;
-		EXGStruct->HRCalculationLastTick = HAL_GetTick();
+		exg.previousHeartRate = HR;
+		exg.HRCalculationLastTick = HAL_GetTick();
 	}
 	else if(input < ECG_THRESHOLD)
-		EXGStruct->heartRateLock = 0;
+		exg.heartRateLock = 0;
 }
 /*-----------------------------------------------------------*/
-void EOG_EnvelopeDetection(EXG_t *EXGStruct)
+void EOG_EnvelopeDetection()
 {
-	float input = EXGStruct->EMGRectifiedSample;
-	uint8_t index = EXGStruct->windowBufferIndex;
-	float lastSampleInWindow = EXGStruct->movingWindowBuffer[index];
-	float sum = EXGStruct->sumOfSamplesValuesInWindow;
+	float input = exg.EMGRectifiedSample;
+	uint8_t index = exg.windowBufferIndex;
+	float lastSampleInWindow = exg.movingWindowBuffer[index];
+	float sum = exg.sumOfSamplesValuesInWindow;
 	float movingMean;
 	sum = sum - lastSampleInWindow;
 	sum = sum + input;  // new sample get into window
-	EXGStruct->movingWindowBuffer[index] = input;
+	exg.movingWindowBuffer[index] = input;
 	index ++;
 	if (index == EMG_MOVING_WINDOW) // circular buffer
 		index = 0;
 	movingMean = (sum / EMG_MOVING_WINDOW) * EMG_EVELOPE_GAIN_FACTOR;
-	EXGStruct->sumOfSamplesValuesInWindow = sum;
-	EXGStruct->EMGEnvelopeSample = movingMean;
-	EXGStruct->windowBufferIndex = index;
+	exg.sumOfSamplesValuesInWindow = sum;
+	exg.EMGEnvelopeSample = movingMean;
+	exg.windowBufferIndex = index;
 }
 /*-----------------------------------------------------------*/
-void EMG_Rectifying(EXG_t *EXGStruct)
+void EMG_Rectifying()
 {
-	float input = EXGStruct->filteredSample;
+	float input = exg.filteredSample;
 	float absInput = input;
 	if (input < 0.0)
 		absInput = - input;
-	EXGStruct->EMGRectifiedSample = absInput;
+	exg.EMGRectifiedSample = absInput;
 }
 /*-----------------------------------------------------------*/
-void EMG_EnvelopeDetection(EXG_t *EXGStruct)
+void EMG_EnvelopeDetection()
 {
-	float input = EXGStruct->EMGRectifiedSample;
-	uint8_t index = EXGStruct->windowBufferIndex;
-	float lastSampleInWindow = EXGStruct->movingWindowBuffer[index];
-	float sum = EXGStruct->sumOfSamplesValuesInWindow;
+	float input = exg.EMGRectifiedSample;
+	uint8_t index = exg.windowBufferIndex;
+	float lastSampleInWindow = exg.movingWindowBuffer[index];
+	float sum = exg.sumOfSamplesValuesInWindow;
 	float movingMean;
 	sum = sum - lastSampleInWindow;
 	sum = sum + input;  // new sample get into window
-	EXGStruct->movingWindowBuffer[index] = input;
+	exg.movingWindowBuffer[index] = input;
 	index ++;
 	if (index == EMG_MOVING_WINDOW) // circular buffer
 		index = 0;
 	movingMean = (sum / EMG_MOVING_WINDOW) * EMG_EVELOPE_GAIN_FACTOR;
-	EXGStruct->sumOfSamplesValuesInWindow = sum;
-	EXGStruct->EMGEnvelopeSample = movingMean;
-	EXGStruct->windowBufferIndex = index;
+	exg.sumOfSamplesValuesInWindow = sum;
+	exg.EMGEnvelopeSample = movingMean;
+	exg.windowBufferIndex = index;
 }
 /*-----------------------------------------------------------*/
-void EMG_PulseDetection(EXG_t *EXGStruct)
+void EMG_PulseDetection()
 {
-	float input = EXGStruct->EMGEnvelopeSample;
-	float EMGPulseThreshold = EXGStruct->EMGPulseDetectionThreshold;
-	if (input >= EMGPulseThreshold &&  EXGStruct->EMGPulseDetectionLock == 0) // detecting rising edge of pulse
+	float input = exg.EMGEnvelopeSample;
+	float EMGPulseThreshold = exg.EMGPulseDetectionThreshold;
+	if (input >= EMGPulseThreshold &&  exg.EMGPulseDetectionLock == 0) // detecting rising edge of pulse
 	{
-		EXGStruct->EMGPulseRisingEdgeTick = HAL_GetTick();
-		EXGStruct->EMGPulseDetectionLock = 1;
+		exg.EMGPulseRisingEdgeTick = HAL_GetTick();
+		exg.EMGPulseDetectionLock = 1;
 	}
-	else if (input < EMGPulseThreshold &&  EXGStruct->EMGPulseDetectionLock == 1) // detecting falling edge of pulse
+	else if (input < EMGPulseThreshold &&  exg.EMGPulseDetectionLock == 1) // detecting falling edge of pulse
 	{
 
-		uint16_t EMGPulseTime = HAL_GetTick() - EXGStruct->EMGPulseRisingEdgeTick;
+		uint16_t EMGPulseTime = HAL_GetTick() - exg.EMGPulseRisingEdgeTick;
 		if (EMGPulseTime > EMG_NOISY_PULSE_PERIOD_MS)
 		{
-			EXGStruct->EMGPulseDurationMsec = EMGPulseTime;
-			EXGStruct->EMGPulseDetectionFlag = 1;
+			exg.EMGPulseDurationMsec = EMGPulseTime;
+			exg.EMGPulseDetectionFlag = 1;
 		}
-		EXGStruct->EMGPulseDetectionLock = 0;
+		exg.EMGPulseDetectionLock = 0;
 	}
 }
 /*-----------------------------------------------------------*/
-void EyeBlinkDetection(EXG_t *EXGStruct)
+void EyeBlinkDetection()
 {
-	float input = EXGStruct->filteredSample;
+	float input = exg.filteredSample;
 
-	if (input >= EOG_BLINK_MAX_THRESHOLD   &&  EXGStruct->EOGPositivePulseDetectionLock == 0) // detecting rising edge (start) of positive pulse
-			EXGStruct->EOGPositivePulseDetectionLock = 1;
-	else if (input < (EOG_BLINK_MAX_THRESHOLD - SHMITH_SHIFT)  &&  EXGStruct->EOGPositivePulseDetectionLock == 1) // detecting falling edge (finish) of positive pulse
+	if (input >= EOG_BLINK_MAX_THRESHOLD   &&  exg.EOGPositivePulseDetectionLock == 0) // detecting rising edge (start) of positive pulse
+			exg.EOGPositivePulseDetectionLock = 1;
+	else if (input < (EOG_BLINK_MAX_THRESHOLD - SHMITH_SHIFT)  &&  exg.EOGPositivePulseDetectionLock == 1) // detecting falling edge (finish) of positive pulse
 	{
-		EXGStruct->EOGPositivePulseDetectionLock = 0;
-		EXGStruct->EOGPositivePulseDetectionTick = HAL_GetTick();
-		EXGStruct->EOGPositivePulseDetectionFlag = 1;
-		if(EXGStruct->EOGNegativePulseDetectionFlag == 1)
+		exg.EOGPositivePulseDetectionLock = 0;
+		exg.EOGPositivePulseDetectionTick = HAL_GetTick();
+		exg.EOGPositivePulseDetectionFlag = 1;
+		if(exg.EOGNegativePulseDetectionFlag == 1)
 		{
-			if(EXGStruct->EOGPositivePulseDetectionTick - EXGStruct->EOGNegativePulseDetectionTick < EOG_ONE_BLINK_PERIOD_MS)
+			if(exg.EOGPositivePulseDetectionTick - exg.EOGNegativePulseDetectionTick < EOG_ONE_BLINK_PERIOD_MS)
 				{
-					EXGStruct->eyeBlinkStatus = LEFT_BLINK;
-					EXGStruct->EOGNegativePulseDetectionFlag = 0;
-					EXGStruct->EOGPositivePulseDetectionFlag = 0;
+					exg.eyeBlinkStatus = LEFT_BLINK;
+					exg.EOGNegativePulseDetectionFlag = 0;
+					exg.EOGPositivePulseDetectionFlag = 0;
 				}
-			else EXGStruct->EOGNegativePulseDetectionFlag = 0;
+			else exg.EOGNegativePulseDetectionFlag = 0;
 		}
 	}
-	else if (input <= EOG_BLINK_MIN_THRESHOLD  &&  EXGStruct->EOGNegativePulseDetectionLock == 0) //detecting falling edge (start) of negative pulse
-		EXGStruct->EOGNegativePulseDetectionLock = 1;
-	else if (input > (EOG_BLINK_MIN_THRESHOLD + SHMITH_SHIFT)  &&  EXGStruct->EOGNegativePulseDetectionLock == 1 ) //detecting rising edge (finish) of negative pulse
+	else if (input <= EOG_BLINK_MIN_THRESHOLD  &&  exg.EOGNegativePulseDetectionLock == 0) //detecting falling edge (start) of negative pulse
+		exg.EOGNegativePulseDetectionLock = 1;
+	else if (input > (EOG_BLINK_MIN_THRESHOLD + SHMITH_SHIFT)  &&  exg.EOGNegativePulseDetectionLock == 1 ) //detecting rising edge (finish) of negative pulse
 	{
-		EXGStruct->EOGNegativePulseDetectionLock = 0;
-		EXGStruct->EOGNegativePulseDetectionTick = HAL_GetTick();
-		EXGStruct->EOGNegativePulseDetectionFlag = 1;
-		if(EXGStruct->EOGPositivePulseDetectionFlag ==1)
+		exg.EOGNegativePulseDetectionLock = 0;
+		exg.EOGNegativePulseDetectionTick = HAL_GetTick();
+		exg.EOGNegativePulseDetectionFlag = 1;
+		if(exg.EOGPositivePulseDetectionFlag ==1)
 		{
-			if(EXGStruct->EOGNegativePulseDetectionTick - EXGStruct->EOGPositivePulseDetectionTick < EOG_ONE_BLINK_PERIOD_MS)
+			if(exg.EOGNegativePulseDetectionTick - exg.EOGPositivePulseDetectionTick < EOG_ONE_BLINK_PERIOD_MS)
 				{
-					EXGStruct->eyeBlinkStatus = RIGHT_BLINK;
-					EXGStruct->EOGNegativePulseDetectionFlag = 0;
-					EXGStruct->EOGPositivePulseDetectionFlag = 0;
+					exg.eyeBlinkStatus = RIGHT_BLINK;
+					exg.EOGNegativePulseDetectionFlag = 0;
+					exg.EOGPositivePulseDetectionFlag = 0;
 				}
-			else EXGStruct->EOGPositivePulseDetectionFlag = 0;
+			else exg.EOGPositivePulseDetectionFlag = 0;
 		}
 	}
 }
@@ -842,7 +842,7 @@ Module_Status EXG_Init(InputSignal_EXG inputSignal)
 {
 	uint8_t status = H2BR0_OK;
 
-	EXG_Enable(&exg);
+	EXG_Enable();
 
 	switch (inputSignal)
 	{
@@ -887,7 +887,7 @@ Module_Status EXG_SignalProcessing(void)
 	LeadsStatus_EXG leadsStatus;
 	InputSignal_EXG inputSignal;
 
-	CheckLeadsStatus(&exg, &leadsStatus);
+	CheckLeadsStatus(&leadsStatus);
 
 	if (leadsStatus == LeadP_CONNECTED_LeadN_CONNECTED)
 	{
@@ -897,29 +897,29 @@ Module_Status EXG_SignalProcessing(void)
 		switch (inputSignal)
 		{
 			case ECG:
-				ECG_Filter(&exg);
-				ECG_BaselineFilter(&exg);
+				ECG_Filter();
+				ECG_BaselineFilter();
 				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					ECG_HeartRateCalculation(&exg);
+					ECG_HeartRateCalculation();
 				break;
 
 			case EOG:
 				EOG_Filter(&exg);
 				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					EyeBlinkDetection(&exg);
+					EyeBlinkDetection();
 				break;
 
 			case EEG:
-				EEG_Filter(&exg);
+				EEG_Filter();
 				break;
 
 			case EMG:
-				EMG_Filter(&exg);
+				EMG_Filter();
 				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
 				{
-					EMG_Rectifying(&exg);
-					EMG_EnvelopeDetection(&exg);
-					EMG_PulseDetection(&exg);
+					EMG_Rectifying();
+					EMG_EnvelopeDetection();
+					EMG_PulseDetection();
 				}
 				break;
 
@@ -1087,15 +1087,15 @@ Module_Status PlotToTerminal(UART_HandleTypeDef *huart)
 	if(exg.inputSignalType == ECG || exg.inputSignalType == EOG || exg.inputSignalType == EEG || exg.inputSignalType == EMG)
 	{
 		if(exg.inputSignalType == EMG)
-			sprintf(sendData, "a%5.2fb%5.2fc%5.2fd%5.2f\n",exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample, exg.EMGEnvelopeSample);
+			sprintf(sendData, "a%5.2fb%5.2fc%5.2fd%5.2f\r\n",exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample, exg.EMGEnvelopeSample);
 		else
-			sprintf(sendData, "a%5.2fb%5.2f\n", exg.analogSample, exg.filteredSample);
+			sprintf(sendData, "a%5.2fb%5.2f\r\n", exg.analogSample, exg.filteredSample);
 
-		GetSamplingFlag(&exg, &samplingFlag);
+		GetSamplingFlag(&samplingFlag);
 
 		if (samplingFlag == 1)
 		{
-			ResetSamplingFlag(&exg);
+			ResetSamplingFlag();
 		    HAL_UART_Transmit(huart, sendData, strlen(sendData), 100);
 		}
 	}
