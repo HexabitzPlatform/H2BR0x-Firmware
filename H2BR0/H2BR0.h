@@ -253,7 +253,7 @@ Module_Status EMG_SetThreshold(uint8_t threshold);
 Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
 Module_Status ECG_HeartRate(uint8_t *heartRate);
 Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus); // EOG
-Module_Status PlotToTerminal(UART_HandleTypeDef *huart);
+Module_Status PlotToTerminal(uint8_t port);
 Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 /* -----------------------------------------------------------------------
  |								Commands							      ||

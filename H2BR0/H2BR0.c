@@ -426,7 +426,7 @@ void EXGTask(void *argument){
 //#ifdef ECG_Signal
 /**************** Application for ECG *******************/
 	LeadsStatus(&wiresStatus);
-	PlotToTerminal(&huart3);
+	///PlotToTerminal(&huart3);
 	ECG_HeartRate(&heartrate);
 /****************************************************/
 //#endif
@@ -436,7 +436,7 @@ void EXGTask(void *argument){
 /**************** Application for EOG *******************/
 
 	LeadsStatus(&wiresStatus);
-	PlotToTerminal(&huart3);
+	//PlotToTerminal(&huart3);
 	CheckEyeBlink(&eyeBlinkStatus);
 	if(eyeBlinkStatus == RIGHT_BLINK)
 		rightBlinkCounte ++;
@@ -1078,11 +1078,13 @@ Module_Status ECG_HeartRate(uint8_t *heartRate)
 
 /*-----------------------------------------------------------*/
 /*  */
-Module_Status PlotToTerminal(UART_HandleTypeDef *huart)
+Module_Status PlotToTerminal(uint8_t port)
 {
 	uint8_t status = H2BR0_OK;
 	uint8_t samplingFlag;
 	char sendData[26];
+	if(port == 0)
+	return H2BR0_ERR_WrongParams;
 
 	if(exg.inputSignalType == ECG || exg.inputSignalType == EOG || exg.inputSignalType == EEG || exg.inputSignalType == EMG)
 	{
@@ -1096,7 +1098,7 @@ Module_Status PlotToTerminal(UART_HandleTypeDef *huart)
 		if (samplingFlag == 1)
 		{
 			ResetSamplingFlag();
-		    HAL_UART_Transmit(huart, sendData, strlen(sendData), 100);
+		    HAL_UART_Transmit(GetUart(port), sendData, strlen(sendData), 100);
 		}
 	}
 	else
