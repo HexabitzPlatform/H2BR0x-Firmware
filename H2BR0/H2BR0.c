@@ -34,26 +34,6 @@ EXG_t exg;
 /* exported functions */
 
 /* Private variables ---------------------------------------------------------*/
-TaskHandle_t EXGTaskHandle = NULL;
-
-uint8_t emgFlag;
-uint16_t emgDurMsec;
-uint8_t heartrate;
-uint32_t x=0;
-uint16_t i;
-uint32_t lasttick;
-uint16_t rightBlinkCounte, leftBlinkCounte;
-
-float ecgSample;
-float ecgFilteredSample;
-float eogSample;
-float eogFilteredSample;
-float emgSample;
-float emgFilteredSample;
-float emgFilteredSample;
-float emgRectifiedSample;
-float emgEnvelopeSample;
-
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -344,6 +324,7 @@ void Module_Peripheral_Init(void){
 	MX_USART5_UART_Init();
 	MX_USART6_UART_Init();
 	MX_TIM2_Init();
+	MX_ADC1_Init();
 
 	 //Circulating DMA Channels ON All Module
 	for (int i = 1; i <= NumOfPorts; i++) {
@@ -359,10 +340,6 @@ void Module_Peripheral_Init(void){
 			index_dma[i - 1] = &(DMA1_Channel5->CNDTR);
 		}
 	}
-
-	/* Create module special task (if needed) */
-	if(EXGTaskHandle == NULL)
-		xTaskCreate(EXGTask,(const char* ) "EXGTask",configMINIMAL_STACK_SIZE,NULL,osPriorityNormal - osPriorityIdle,&EXGTaskHandle);
 
 }
 
@@ -411,73 +388,30 @@ void RegisterModuleCLICommands(void){
 /*-----------------------------------------------------------*/
 
 /* Module special task function (if needed) */
-void EXGTask(void *argument){
 
-	EyeBlinkingStatus eyeBlinkStatus;
-	LeadsStatus_EXG wiresStatus;
-
-	/* Infinite loop */
-	uint8_t cases; // Test variable.
-
-
-	for(;;){
-		/*  */
-
-//#ifdef ECG_Signal
-/**************** Application for ECG *******************/
-	LeadsStatus(&wiresStatus);
-	///PlotToTerminal(&huart3);
-	ECG_HeartRate(&heartrate);
-/****************************************************/
-//#endif
-
-
-//#ifdef EOG_Signal
-/**************** Application for EOG *******************/
-
-	LeadsStatus(&wiresStatus);
-	//PlotToTerminal(&huart3);
-	CheckEyeBlink(&eyeBlinkStatus);
-	if(eyeBlinkStatus == RIGHT_BLINK)
-		rightBlinkCounte ++;
-	else if (eyeBlinkStatus == LEFT_BLINK)
-	    leftBlinkCounte ++;
-/****************************************************/
-//#endif
-
-
-//#ifdef EMG_Signal
-/**************** Application for EMG *******************/
-	  EMG_CheckPulse(&emgFlag, &emgDurMsec);
-	  if (emgFlag == 1)
-	  {
-		  if(emgDurMsec>150)
-		  {
-//			  HAL_GPIO_WritePin(GPIOB,MOTOR_CONTROL_Pin, GPIO_PIN_SET);
-			  x=1;
-			  HAL_Delay(5000);
-//			  HAL_GPIO_WritePin(GPIOB,MOTOR_CONTROL_Pin, GPIO_PIN_RESET);
-			  x=0;
-		  }
-	  }
-	  LeadsStatus(&wiresStatus);
-
-/****************************************************/
-//#endif
-
-
-		switch(cases){
-
-
-			default:
-				osDelay(10);
-				break;
-		}
-
-		taskYIELD();
-	}
-
-}
+//void EXGTask(void *argument){
+//
+//	EyeBlinkingStatus eyeBlinkStatus;
+//	LeadsStatus_EXG wiresStatus;
+//
+//	/* Infinite loop */
+//	uint8_t cases; // Test variable.
+//
+//
+//	for(;;){
+//		/*  */
+//		switch(cases){
+//
+//
+//			default:
+//				osDelay(10);
+//				break;
+//		}
+//
+//		taskYIELD();
+//	}
+//
+//}
 
 
 /*-----------------------------------------------------------*/
@@ -827,10 +761,9 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef* htim)
 
 	if(htim->Instance == EXG_TIM)
 	{
-		SetSamplingFlag(&exg);
+		SetSamplingFlag();
 		EXG_SignalProcessing();
 	}
-	x++;
 }
 
 /* -----------------------------------------------------------------------
@@ -904,7 +837,7 @@ Module_Status EXG_SignalProcessing(void)
 				break;
 
 			case EOG:
-				EOG_Filter(&exg);
+				EOG_Filter();
 				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
 					EyeBlinkDetection();
 				break;
