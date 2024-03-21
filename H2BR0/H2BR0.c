@@ -30,11 +30,12 @@ extern uint8_t numOfRecordedSnippets;
 
 /* Module exported parameters ------------------------------------------------*/
 module_param_t modParam[NUM_MODULE_PARAMS] ={{.paramPtr = NULL, .paramFormat =FMT_FLOAT, .paramName =""}};
-EXG_t exg;
+#define MIN_PERIOD_MS				100
+
 /* exported functions */
 
 /* Private variables ---------------------------------------------------------*/
-
+EXG_t exg;
 
 /* Private function prototypes -----------------------------------------------*/
 void ExecuteMonitor(void);
@@ -56,7 +57,7 @@ void EyeBlinkDetection();
 void EMG_Rectifying();
 void EMG_EnvelopeDetection();
 void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus);
-
+Module_Status EXG_SignalProcessing(void);
 
 /* Create CLI commands --------------------------------------------------------*/
 
@@ -754,6 +755,60 @@ void EyeBlinkDetection()
 	}
 }
 
+
+/*-----------------------------------------------------------*/
+/*  */
+Module_Status EXG_SignalProcessing(void)
+{
+	uint8_t status = H2BR0_OK;
+	LeadsStatus_EXG leadsStatus;
+	InputSignal_EXG inputSignal;
+
+	CheckLeadsStatus(&leadsStatus);
+
+	if (leadsStatus == LeadP_CONNECTED_LeadN_CONNECTED)
+	{
+		exg.analogSample = (float)(exg.AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
+		inputSignal = exg.inputSignalType;
+
+		switch (inputSignal)
+		{
+			case ECG:
+				ECG_Filter();
+				ECG_BaselineFilter();
+				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+					ECG_HeartRateCalculation();
+				break;
+
+			case EOG:
+				EOG_Filter();
+				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+					EyeBlinkDetection();
+				break;
+
+			case EEG:
+				EEG_Filter();
+				break;
+
+			case EMG:
+				EMG_Filter();
+				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+				{
+					EMG_Rectifying();
+					EMG_EnvelopeDetection();
+					EMG_PulseDetection();
+				}
+				break;
+
+			default:
+				status = H2BR0_ERR_WrongParams;
+		}
+	}
+	else
+		status = H2BR0_ERR_LEADS_NOTCONNECTED;
+
+	return status;
+}
 /*-----------------------------------------------------------*/
 /* timer2 EXG special timer callback */
 void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef* htim)
@@ -812,59 +867,6 @@ Module_Status EXG_Init(InputSignal_EXG inputSignal)
 	return status;
 }
 
-/*-----------------------------------------------------------*/
-/*  */
-Module_Status EXG_SignalProcessing(void)
-{
-	uint8_t status = H2BR0_OK;
-	LeadsStatus_EXG leadsStatus;
-	InputSignal_EXG inputSignal;
-
-	CheckLeadsStatus(&leadsStatus);
-
-	if (leadsStatus == LeadP_CONNECTED_LeadN_CONNECTED)
-	{
-		exg.analogSample = (float)(exg.AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
-		inputSignal = exg.inputSignalType;
-
-		switch (inputSignal)
-		{
-			case ECG:
-				ECG_Filter();
-				ECG_BaselineFilter();
-				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					ECG_HeartRateCalculation();
-				break;
-
-			case EOG:
-				EOG_Filter();
-				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					EyeBlinkDetection();
-				break;
-
-			case EEG:
-				EEG_Filter();
-				break;
-
-			case EMG:
-				EMG_Filter();
-				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-				{
-					EMG_Rectifying();
-					EMG_EnvelopeDetection();
-					EMG_PulseDetection();
-				}
-				break;
-
-			default:
-				status = H2BR0_ERR_WrongParams;
-		}
-	}
-	else
-		status = H2BR0_ERR_LEADS_NOTCONNECTED;
-
-	return status;
-}
 
 /*-----------------------------------------------------------*/
 /*  */
@@ -1048,6 +1050,183 @@ Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus)
 
 	*leadsStatus = exg.statusOfLeads;
 	return status;
+}
+/*-----------------------------------------------------------*/
+/*  */
+Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal){
+	float sample=0;
+	float filteredSample=0;
+	float rectifiedSample=0;
+	float envelopeSample=0;
+	static uint8_t temp[16]={0};
+	Module_Status status =H2BR0_OK;
+
+	if(port == 0)
+		return H2BR0_ERR_WrongParams;
+
+	switch (inputSignal){
+	case ECG:
+		status=ECG_Sample(&sample,&filteredSample);
+		if(module == myID)
+		{
+		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		writePxITMutex(port,(char* )&temp[0],8 * sizeof(uint8_t),10);
+		}
+		else
+		{
+		messageParams[0] =port;
+		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		}
+		break;
+
+	case EOG:
+		status=EOG_Sample(&sample,&filteredSample);
+		if(module == myID)
+		{
+		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		writePxITMutex(port,(char* )&temp[0],8 * sizeof(uint8_t),10);
+		}
+		else
+		{
+		messageParams[0] =port;
+		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		}
+		break;
+
+	case EEG:
+		status=EEG_Sample(&sample,&filteredSample);
+		if(module == myID)
+		{
+		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		writePxITMutex(port,(char* )&temp[0],8 * sizeof(uint8_t),10);
+		}
+		else
+		{
+		messageParams[0] =port;
+		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		}
+		break;
+
+	case EMG:
+		status=EMG_Sample(&sample,&filteredSample,&rectifiedSample,&envelopeSample);
+		if(module == myID)
+		{
+		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		temp[8] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 0);
+		temp[9] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 8);
+		temp[10] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 16);
+		temp[11] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 24);
+		temp[12] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 0);
+		temp[13] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 8);
+		temp[14] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 16);
+		temp[15] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 24);
+		writePxITMutex(port,(char* )&temp[0],16 * sizeof(uint8_t),10);
+		}
+		else
+		{
+		messageParams[0] =port;
+		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		messageParams[9] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 0);
+		messageParams[10] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 8);
+		messageParams[11] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 16);
+		messageParams[12] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 24);
+		messageParams[13] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 0);
+		messageParams[14] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 8);
+		messageParams[15] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 16);
+		messageParams[16] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 24);
+		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		}
+		break;
+
+	default:
+		status=H2BR0_ERR_WrongParams;
+		break;
+
+	}
+	memset(&temp[0],0,sizeof(temp));
+
+	    return status;
+}
+/*-----------------------------------------------------------*/
+/*  */
+Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+{
+	Module_Status status =H2BR0_OK;
+	uint32_t samples=0;
+	uint32_t period=0;
+	period=timeout/Numofsamples;
+
+	if (timeout < MIN_PERIOD_MS || period < MIN_PERIOD_MS)
+		return H2BR0_ERR_WrongParams;
+
+	while(samples < Numofsamples)
+	{
+	status=SampletoPort(module,port,inputSignal);
+	vTaskDelay(pdMS_TO_TICKS(period));
+	samples++;
+	}
+	samples=0;
+	return status;
+
 }
 
 /* -----------------------------------------------------------------------
