@@ -160,7 +160,7 @@ typedef enum{
 }StatusType_EXG;
 
 typedef enum{
-	LeadP_CONNECTED_LeadN_CONNECTED        = 1,
+	LeadP_CONNECTED_LeadN_CONNECTED        = 0,
 	LeadP_CONNECTED_LeadN_NOTCONNECTED     = 1,
 	LeadP_NOTCONNECTED_LeadN_CONNECTED     = 2,
 	LeadP_NOTCONNECTED_LeadN_NOTCONNECTED  = 3,
