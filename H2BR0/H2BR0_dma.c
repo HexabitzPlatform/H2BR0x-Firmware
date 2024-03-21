@@ -66,6 +66,10 @@ void DMA_Init(void){
 	DMA_MSG_RX_CH_Init(&msgRxDMA[5],DMA1_Channel6);
 #endif
 
+	  /* DMA1_Channel1_IRQn interrupt configuration */
+	  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+	  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
 	/* Initialize streaming RX DMAs x 0 */
 	// No more channels. Dynamically reconfigure from messaging RX DMAs.
 	/* Initialize frontend DMAs x 3 - Update for each module */
