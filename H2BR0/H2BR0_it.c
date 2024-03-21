@@ -28,6 +28,21 @@ extern TaskHandle_t xCommandConsoleTaskHandle; // CLI Task handler.
 /******************************************************************************/
 /*            Cortex-M0 Processor Interruption and Exception Handlers         */
 /******************************************************************************/
+ /**
+   * @brief This function handles Non maskable interrupt.
+   */
+ void NMI_Handler(void)
+ {
+   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
+
+   /* USER CODE END NonMaskableInt_IRQn 0 */
+   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+   while (1)
+   {
+   }
+   /* USER CODE END NonMaskableInt_IRQn 1 */
+ }
+
 
 /**
  * @brief This function handles System tick timer.
@@ -332,6 +347,20 @@ void vApplicationMallocFailedHook(void){
 	for(;;);
 }
 /*-----------------------------------------------------------*/
+
+/**
+  * @brief This function handles DMA1 channel 1 interrupt.
+  */
+void DMA1_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 1 */
+}
 
 /**
   * @brief This function handles TIM2 global interrupt.
