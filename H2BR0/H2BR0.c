@@ -76,7 +76,7 @@ portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBuffer
 const CLI_Command_Definition_t CLI_ECG_SampleCommandDefinition =
 {
 	( const int8_t * ) "ecg_sample", /* The command string to type. */
-	( const int8_t * ) "ecg_sample:\r\n Parameters required to execute a readcellvoltage \r\n\r\n",
+	( const int8_t * ) "ecg_sample:\r\nExtracting a normal sample and a filtered sample from the ECG signal.\r\n\r\n",
 	CLI_ECG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -85,7 +85,7 @@ const CLI_Command_Definition_t CLI_ECG_SampleCommandDefinition =
 const CLI_Command_Definition_t CLI_EOG_SampleCommandDefinition =
 {
 	( const int8_t * ) "eog_sample", /* The command string to type. */
-	( const int8_t * ) "eog_sample:\r\n Parameters required to execute a readcellcurrent \r\n\r\n",
+	( const int8_t * ) "eog_sample:\r\n Extracting a normal sample and a filtered sample from the EOG signal. \r\n\r\n",
 	CLI_EOG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -94,7 +94,7 @@ const CLI_Command_Definition_t CLI_EOG_SampleCommandDefinition =
 const CLI_Command_Definition_t CLI_EEG_SampleCommandDefinition =
 {
 	( const int8_t * ) "eeg_sample", /* The command string to type. */
-	( const int8_t * ) "eeg_sample:\r\n Parameters required to execute a readcellpower \r\n\r\n",
+	( const int8_t * ) "eeg_sample:\r\n Extracting a normal sample and a filtered sample from the EEG signal. \r\n\r\n",
 	CLI_EEG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -103,7 +103,7 @@ const CLI_Command_Definition_t CLI_EEG_SampleCommandDefinition =
 const CLI_Command_Definition_t CLI_EMG_SampleCommandDefinition =
 {
 	( const int8_t * ) "emg_sample", /* The command string to type. */
-	( const int8_t * ) "emg_sample:\r\n Parameters required to execute a readtemperature \r\n\r\n",
+	( const int8_t * ) "emg_sample:\r\n Extracting a normal sample, a filtered sample, a rectified sample, and an envelope sample from the EMG signal.\r\n\r\n",
 	CLI_EMG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -112,7 +112,7 @@ const CLI_Command_Definition_t CLI_EMG_SampleCommandDefinition =
 const CLI_Command_Definition_t CLI_EMG_SetThresholdCommandDefinition =
 {
 	( const int8_t * ) "emg_setthreshold", /* The command string to type. */
-	( const int8_t * ) "emg_setthreshold:\r\n Parameters required to execute a readcellcapacity \r\n\r\n",
+	( const int8_t * ) "emg_setthreshold:\r\n Seting the threshold for EMG signal.\r\n\r\n",
 	CLI_EMG_SetThresholdCommand, /* The function to run. */
 	1 /* zero parameters are expected. */
 };
@@ -121,7 +121,7 @@ const CLI_Command_Definition_t CLI_EMG_SetThresholdCommandDefinition =
 const CLI_Command_Definition_t CLI_EMG_CheckPulseCommandDefinition =
 {
 	( const int8_t * ) "emg_checkpulse", /* The command string to type. */
-	( const int8_t * ) "emg_checkpulse:\r\n Parameters required to execute a readcellstateofcharge \r\n\r\n",
+	( const int8_t * ) "emg_checkpulse:\r\n reading the time of how long the EMG signal lasted with the threshold value. \r\n\r\n",
 	CLI_EMG_CheckPulseCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -130,7 +130,7 @@ const CLI_Command_Definition_t CLI_EMG_CheckPulseCommandDefinition =
 const CLI_Command_Definition_t CLI_ECG_HeartRateCommandDefinition =
 {
 	( const int8_t * ) "ecg_heartrate", /* The command string to type. */
-	( const int8_t * ) "ecg_heartrate:\r\n Parameters required to execute a readcellestimatedtte \r\n\r\n",
+	( const int8_t * ) "ecg_heartrate:\r\n reading heart rate from the ECG signal. \r\n\r\n",
 	CLI_ECG_HeartRateCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -139,7 +139,7 @@ const CLI_Command_Definition_t CLI_ECG_HeartRateCommandDefinition =
 const CLI_Command_Definition_t CLI_CheckEyeBlinkCommandDefinition =
 {
 	( const int8_t * ) "checkeyeblink", /* The command string to type. */
-	( const int8_t * ) "checkeyeblink:\r\n Parameters required to execute a readcellestimatedttf \r\n\r\n",
+	( const int8_t * ) "checkeyeblink:\r\n reading eye movement state (rapid right or left - up or down) based on electrode placement. \r\n\r\n",
 	CLI_CheckEyeBlinkCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -148,7 +148,7 @@ const CLI_Command_Definition_t CLI_CheckEyeBlinkCommandDefinition =
 const CLI_Command_Definition_t CLI_LeadsStatusCommandDefinition =
 {
 	( const int8_t * ) "leadsstatus", /* The command string to type. */
-	( const int8_t * ) "leadsstatus:\r\n Parameters required to execute a readcellage \r\n\r\n",
+	( const int8_t * ) "leadsstatus:\r\n reading Electrodes status. \r\n\r\n",
 	CLI_LeadsStatusCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
@@ -974,7 +974,7 @@ Module_Status EXG_Init(InputSignal_EXG inputSignal)
 
 /*-----------------------------------------------------------*/
 /*
- * @brief: Set the threshold for EMG signal.
+ * @brief: Seting the threshold for EMG signal.
  * @param1: threshold value (0 - 100).
  * @retval: status
  */
@@ -998,7 +998,7 @@ Module_Status EMG_SetThreshold(uint8_t threshold)
 
 /*-----------------------------------------------------------*/
 /*
- * @brief: read the time of how long the EMG signal lasted with the threshold value.
+ * @brief: reading the time of how long the EMG signal lasted with the threshold value.
  * @param1: EMGDetectionFlag pointer to a buffer to store value.
  * @param2: EMGDurationMsec pointer to a buffer to store value.
  * @retval: status
@@ -1024,7 +1024,7 @@ Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMse
 
 /*-----------------------------------------------------------*/
 /*
- * @brief: read eye movement state (rapid right or left - up or down) based on electrode placement.
+ * @brief: reading eye movement state (rapid right or left - up or down) based on electrode placement.
  * @param1: eyeBlinkStatus pointer to a buffer to store value.
  * @retval: status
  */
@@ -1138,7 +1138,7 @@ Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedS
 
 /*-----------------------------------------------------------*/
 /*
- * @brief: read heart rate from the ECG signal.
+ * @brief: reading heart rate from the ECG signal.
  * @param1: heartRate pointer to a buffer to store value
  * @retval: status
  */
@@ -1156,7 +1156,7 @@ Module_Status ECG_HeartRate(uint8_t *heartRate)
 
 /*-----------------------------------------------------------*/
 /*
- * @brief: Send (normal sample) and (filtered sample) to display on Terminal or draw
+ * @brief: Sending (normal sample) and (filtered sample) to display on Terminal or draw
  * signals for EMG,EEG,ECG,EOG
  * @param1: The port you want to send from
  * @param2: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
@@ -1193,7 +1193,7 @@ Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal)
 
 /*-----------------------------------------------------------*/
 /*
- * @brief: read Electrodes status.
+ * @brief: reading Electrodes status.
  * @param1: leadsStatus pointer to a buffer to store value
  * @retval: status
  */
