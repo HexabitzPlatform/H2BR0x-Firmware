@@ -244,14 +244,14 @@ void SetupPortForRemoteBootloaderUpdate(uint8_t port);
 void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 
 Module_Status EXG_Init(InputSignal_EXG inputSignal);
-Module_Status ECG_Sample(float *sample, float *filteredSample );
-Module_Status EOG_Sample(float *sample, float *filteredSample );
-Module_Status EEG_Sample(float *sample, float *filteredSample );
+Module_Status ECG_Sample(float *sample, float *filteredSample);
+Module_Status EOG_Sample(float *sample, float *filteredSample);
+Module_Status EEG_Sample(float *sample, float *filteredSample);
 Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample);
 Module_Status EMG_SetThreshold(uint8_t threshold);
 Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
 Module_Status ECG_HeartRate(uint8_t *heartRate);
-Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus); // EOG
+Module_Status EOG_CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus);
 Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal);
 Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal);

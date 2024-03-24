@@ -67,7 +67,7 @@ portBASE_TYPE CLI_EMG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 portBASE_TYPE CLI_EMG_SetThresholdCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_EMG_CheckPulseCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_ECG_HeartRateCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
-portBASE_TYPE CLI_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
+portBASE_TYPE CLI_EOG_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 
 
@@ -136,11 +136,11 @@ const CLI_Command_Definition_t CLI_ECG_HeartRateCommandDefinition =
 };
 /*-----------------------------------------------------------*/
 /* CLI command structure : CheckEyeBlink */
-const CLI_Command_Definition_t CLI_CheckEyeBlinkCommandDefinition =
+const CLI_Command_Definition_t CLI_EOG_CheckEyeBlinkCommandDefinition =
 {
-	( const int8_t * ) "checkeyeblink", /* The command string to type. */
-	( const int8_t * ) "checkeyeblink:\r\n reading eye movement state (rapid right or left - up or down) based on electrode placement. \r\n\r\n",
-	CLI_CheckEyeBlinkCommand, /* The function to run. */
+	( const int8_t * ) "eog_checkeyeblink", /* The command string to type. */
+	( const int8_t * ) "eog_checkeyeblink:\r\n reading eye movement state (rapid right or left - up or down) based on electrode placement. \r\n\r\n",
+	CLI_EOG_CheckEyeBlinkCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
 /*-----------------------------------------------------------*/
@@ -440,17 +440,84 @@ void Module_Peripheral_Init(void){
 /* --- H2BR0 message processing task.
  */
 Module_Status Module_MessagingTask(uint16_t code,uint8_t port,uint8_t src,uint8_t dst,uint8_t shift){
-	Module_Status result =H2BR0_OK;
-
-
-	switch(code){
-
-		default:
-			result =H2BR0_ERR_UNKNOWNMESSAGE;
-			break;
-	}
-	
-	return result;
+//	Module_Status result =H2BR0_OK;
+//	uint8_t uint8Data=0;
+//    uint16_t uint16Data=0;
+//    uint8_t EMGDetectionFlag=0;
+//    uint16_t EMGDurationMsec=0;
+//    uint8_t heartRate=0;
+//    uint8_t module,port;
+//	switch(code){
+//	case CODE_H2BR0_ECG_Sample:
+//		{
+//			EXG_Init(ECG);
+//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],ECG);
+//			break;
+//		}
+//	case CODE_H2BR0_EOG_Sample:
+//		{
+//			EXG_Init(EOG);
+//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EOG);
+//			break;
+//		}
+//	case CODE_H2BR0_EEG_Sample:
+//		{
+//			EXG_Init(EEG);
+//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EEG);
+//			break;
+//		}
+//	case CODE_H2BR0_EMG_Sample:
+//		{
+//			EXG_Init(EMG);
+//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EMG);
+//			break;
+//		}
+//	case CODE_H2BR0_EMG_SetThreshold:
+//		{
+//			EXG_Init(EMG);
+//			EMG_SetThreshold(cMessage[port-1][shift]);
+//			break;
+//		}
+//	case CODE_H2BR0_EMG_CheckPulse:
+//		{
+//			module = cMessage[port-1][shift];
+//			port = cMessage[port-1][1+shift];
+//			EXG_Init(EMG);
+//			EMG_CheckPulse(&EMGDetectionFlag,&EMGDurationMsec);
+//			messageParams[0] =port;
+//			messageParams[1] =(uint8_t)EMGDetectionFlag;
+//			messageParams[2] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 0);
+//			messageParams[3] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 8);
+//			SendMessageToModule(module,CODE_PORT_FORWARD,4);
+//			break;
+//		}
+//	case CODE_H2BR0_ECG_HeartRate:
+//		{
+//			module = cMessage[port-1][shift];
+//		    port = cMessage[port-1][1+shift];
+//		    EXG_Init(ECG);
+//		    ECG_HeartRate(&heartRate);
+//		    messageParams[0] =port;
+//			messageParams[1] =(uint8_t)EMGDetectionFlag;
+//			SendMessageToModule(module,CODE_PORT_FORWARD,2);
+//			break;
+//		}
+//	case CODE_H2BR0_EOG_CheckEyeBlink:
+//		{
+//
+//			break;
+//		}
+//	case CODE_H2BR0_EMG_LeadsStatus:
+//		{
+//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],batVolt);
+//			break;
+//		}
+//		default:
+//			result =H2BR0_ERR_UNKNOWNMESSAGE;
+//			break;
+//	}
+//
+//	return result;
 }
 /* --- Get the port for a given UART. 
  */
@@ -482,7 +549,7 @@ void RegisterModuleCLICommands(void){
 	FreeRTOS_CLIRegisterCommand(&CLI_EMG_SetThresholdCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_EMG_CheckPulseCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_ECG_HeartRateCommandDefinition);
-	FreeRTOS_CLIRegisterCommand(&CLI_CheckEyeBlinkCommandDefinition);
+	FreeRTOS_CLIRegisterCommand(&CLI_EOG_CheckEyeBlinkCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_LeadsStatusCommandDefinition);
 }
 
@@ -1028,7 +1095,7 @@ Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMse
  * @param1: eyeBlinkStatus pointer to a buffer to store value.
  * @retval: status
  */
-Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus)
+Module_Status EOG_CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus)
 {
 	uint8_t status = H2BR0_OK;
 
@@ -1593,7 +1660,7 @@ portBASE_TYPE CLI_ECG_HeartRateCommand( int8_t *pcWriteBuffer, size_t xWriteBuff
 
 }
 /*-----------------------------------------------------------*/
-portBASE_TYPE CLI_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
+portBASE_TYPE CLI_EOG_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	EyeBlinkingStatus eyeBlinkStatus;
 	static const int8_t *pcOKMessage=(int8_t* )"Eye Blink Status is: %s \n\r";
@@ -1607,7 +1674,7 @@ portBASE_TYPE CLI_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBuff
 		configASSERT(pcWriteBuffer);
 
 		EXG_Init(EOG);
-	 	status=CheckEyeBlink(&eyeBlinkStatus);
+	 	status=EOG_CheckEyeBlink(&eyeBlinkStatus);
 
 	 if(status == H2BR0_OK)
 	 {
