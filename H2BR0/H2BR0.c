@@ -925,7 +925,11 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef* htim)
  |								  APIs							          |
 /* -----------------------------------------------------------------------
  */
-/*       */
+/*
+ * @brief: Initialize the signal type to be measured.
+ * @param1: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
+ * @retval: status
+ */
 Module_Status EXG_Init(InputSignal_EXG inputSignal)
 {
 	uint8_t status = H2BR0_OK;
@@ -969,7 +973,11 @@ Module_Status EXG_Init(InputSignal_EXG inputSignal)
 
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: Set the threshold for EMG signal.
+ * @param1: threshold value (0 - 100).
+ * @retval: status
+ */
 Module_Status EMG_SetThreshold(uint8_t threshold)
 {
 	uint8_t status = H2BR0_OK;
@@ -989,7 +997,12 @@ Module_Status EMG_SetThreshold(uint8_t threshold)
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: read the time of how long the EMG signal lasted with the threshold value.
+ * @param1: EMGDetectionFlag pointer to a buffer to store value.
+ * @param2: EMGDurationMsec pointer to a buffer to store value.
+ * @retval: status
+ */
 Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec)
 {
 	uint8_t status = H2BR0_OK;
@@ -1010,7 +1023,11 @@ Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMse
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: read eye movement state (rapid right or left - up or down) based on electrode placement.
+ * @param1: eyeBlinkStatus pointer to a buffer to store value.
+ * @retval: status
+ */
 Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus)
 {
 	uint8_t status = H2BR0_OK;
@@ -1028,7 +1045,12 @@ Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus)
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: Extracting a normal sample and a filtered sample from the ECG signal.
+ * @param1: sample pointer to a buffer to store value.
+ * @param2: filteredSample pointer to a buffer to store value.
+ * @retval: status
+ */
 Module_Status ECG_Sample(float *sample, float *filteredSample )
 {
 	uint8_t status = H2BR0_OK;
@@ -1045,7 +1067,12 @@ Module_Status ECG_Sample(float *sample, float *filteredSample )
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: Extracting a normal sample and a filtered sample from the EOG signal.
+ * @param1: sample pointer to a buffer to store value.
+ * @param2: filteredSample pointer to a buffer to store value.
+ * @retval: status
+ */
 Module_Status EOG_Sample(float *sample, float *filteredSample )
 {
 	uint8_t status = H2BR0_OK;
@@ -1062,7 +1089,12 @@ Module_Status EOG_Sample(float *sample, float *filteredSample )
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: Extracting a normal sample and a filtered sample from the EEG signal.
+ * @param1: sample pointer to a buffer to store value.
+ * @param2: filteredSample pointer to a buffer to store value.
+ * @retval: status
+ */
 Module_Status EEG_Sample(float *sample, float *filteredSample )
 {
 	uint8_t status = H2BR0_OK;
@@ -1079,7 +1111,14 @@ Module_Status EEG_Sample(float *sample, float *filteredSample )
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: Extracting a normal sample, a filtered sample, a rectified sample, and an envelope sample from the EMG signal.
+ * @param1: sample pointer to a buffer to store value.
+ * @param2: filteredSample pointer to a buffer to store value.
+ * @param3: rectifiedSample pointer to a buffer to store value.
+ * @param4: envelopeSample pointer to a buffer to store value.
+ * @retval: status
+ */
 Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample)
 {
 	uint8_t status = H2BR0_OK;
@@ -1098,7 +1137,11 @@ Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedS
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: read heart rate from the ECG signal.
+ * @param1: heartRate pointer to a buffer to store value
+ * @retval: status
+ */
 Module_Status ECG_HeartRate(uint8_t *heartRate)
 {
 	uint8_t status = H2BR0_OK;
@@ -1112,8 +1155,14 @@ Module_Status ECG_HeartRate(uint8_t *heartRate)
 }
 
 /*-----------------------------------------------------------*/
-/*  */
-Module_Status PlotToTerminal(uint8_t port)
+/*
+ * @brief: Send (normal sample) and (filtered sample) to display on Terminal or draw
+ * signals for EMG,EEG,ECG,EOG
+ * @param1: The port you want to send from
+ * @param2: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
+ * @retval: status
+ */
+Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal)
 {
 	uint8_t status = H2BR0_OK;
 	uint8_t samplingFlag;
@@ -1133,7 +1182,7 @@ Module_Status PlotToTerminal(uint8_t port)
 		if (samplingFlag == 1)
 		{
 			ResetSamplingFlag();
-		    HAL_UART_Transmit(GetUart(port), sendData, strlen(sendData), 100);
+			writePxMutex(port, sendData,strlen(sendData), 100, 100);
 		}
 	}
 	else
@@ -1143,7 +1192,11 @@ Module_Status PlotToTerminal(uint8_t port)
 }
 
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: read Electrodes status.
+ * @param1: leadsStatus pointer to a buffer to store value
+ * @retval: status
+ */
 Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus)
 {
 	uint8_t status = H2BR0_OK;
@@ -1152,7 +1205,15 @@ Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus)
 	return status;
 }
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: send a sample on the required port or send it to another module and
+ * graduate the value on the required port.
+ * @brief: if the topology file is not activated, therefore The module number is 0
+ * @param1: destination module.
+ * @param2: port number.
+ * @param3: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
+ * @retval: status
+ */
 Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal){
 	float sample=0;
 	float filteredSample=0;
@@ -1307,7 +1368,17 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 	    return status;
 }
 /*-----------------------------------------------------------*/
-/*  */
+/*
+ * @brief: send a Stream  on the required port or send it to another module and graduate
+ * the value on the required port.
+ * @brief: if the topology file is not activated, therefore The module number is 0
+ * @param1: destination module.
+ * @param2: port number.
+ * @param3: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
+ * @param4: number of samples to be send.
+ * @param5: timeout.
+ * @retval: status
+ */
 Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
 {
 	Module_Status status =H2BR0_OK;
