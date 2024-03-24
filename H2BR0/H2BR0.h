@@ -7,8 +7,8 @@
  	 	 	 	 (Description_of_module)
 
 (Description of Special module peripheral configuration):
->>
->>
+>>Interrupt mode timer (in which the signal specified by the function is processed EXG_SignalProcessing).
+>>ADC to read the analog signal of the signals.
 >>
 
  */
@@ -148,8 +148,8 @@
 /* EXG Module_Status Type Definition */
 typedef enum {
 	H2BR0_OK =0,
-	H2BR0_ERR_UnknownMessage,
-	H2BR0_ERR_WrongParams,
+	H2BR0_ERR_UNKNOWNMESSAGE,
+	H2BR0_ERR_WRONGPARAMS,
 	H2BR0_ERR_LEADS_NOTCONNECTED,
 	H2BR0_ERROR =255
 } Module_Status;
@@ -160,10 +160,10 @@ typedef enum{
 }StatusType_EXG;
 
 typedef enum{
-	LeadP_CONNECTED_LeadN_CONNECTED        = 0,
-	LeadP_CONNECTED_LeadN_NOTCONNECTED     = 1,
-	LeadP_NOTCONNECTED_LeadN_CONNECTED     = 2,
-	LeadP_NOTCONNECTED_LeadN_NOTCONNECTED  = 3,
+	LEADP_CONNECTED_LEADN_CONNECTED        = 0,
+	LEADP_CONNECTED_LEADN_NOTCONNECTED     = 1,
+	LEADP_NOTCONNECTED_LEADN_CONNECTED     = 2,
+	LEADP_NOTCONNECTED_LEADN_NOTCONNECTED  = 3,
 }LeadsStatus_EXG;
 
 typedef enum{

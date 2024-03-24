@@ -446,7 +446,7 @@ Module_Status Module_MessagingTask(uint16_t code,uint8_t port,uint8_t src,uint8_
 	switch(code){
 
 		default:
-			result =H2BR0_ERR_UnknownMessage;
+			result =H2BR0_ERR_UNKNOWNMESSAGE;
 			break;
 	}
 	
@@ -562,12 +562,12 @@ void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus)
 	LODPStatus = HAL_GPIO_ReadPin(LODP_EXG_GPIO_Port, LODP_EXG_Pin);
 	LODNStatus = HAL_GPIO_ReadPin(LODN_EXG_GPIO_Port, LODN_EXG_Pin);
 	if (LODPStatus == GPIO_PIN_RESET && LODNStatus == GPIO_PIN_RESET)
-		*leadsStatus = LeadP_CONNECTED_LeadN_CONNECTED;
+		*leadsStatus = LEADP_CONNECTED_LEADN_CONNECTED;
 	else if (LODPStatus == GPIO_PIN_RESET && LODNStatus == GPIO_PIN_SET)
-		*leadsStatus = LeadP_CONNECTED_LeadN_NOTCONNECTED;
+		*leadsStatus = LEADP_CONNECTED_LEADN_NOTCONNECTED;
 	else if (LODPStatus == GPIO_PIN_SET && LODNStatus == GPIO_PIN_RESET)
-		*leadsStatus = LeadP_NOTCONNECTED_LeadN_CONNECTED;
-	else *leadsStatus = LeadP_NOTCONNECTED_LeadN_NOTCONNECTED;
+		*leadsStatus = LEADP_NOTCONNECTED_LEADN_CONNECTED;
+	else *leadsStatus = LEADP_NOTCONNECTED_LEADN_NOTCONNECTED;
 	exg.statusOfLeads = *leadsStatus;
 }
 /*-----------------------------------------------------------*/
@@ -866,7 +866,7 @@ Module_Status EXG_SignalProcessing(void)
 
 	CheckLeadsStatus(&leadsStatus);
 
-	if (leadsStatus == LeadP_CONNECTED_LeadN_CONNECTED)
+	if (leadsStatus == LEADP_CONNECTED_LEADN_CONNECTED)
 	{
 		exg.analogSample = (float)(exg.AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
 		inputSignal = exg.inputSignalType;
@@ -901,7 +901,7 @@ Module_Status EXG_SignalProcessing(void)
 				break;
 
 			default:
-				status = H2BR0_ERR_WrongParams;
+				status = H2BR0_ERR_WRONGPARAMS;
 		}
 	}
 	else
@@ -961,7 +961,7 @@ Module_Status EXG_Init(InputSignal_EXG inputSignal)
 			break;
 
 		default:
-			status = H2BR0_ERR_WrongParams;
+			status = H2BR0_ERR_WRONGPARAMS;
 			break;
 	}
 	Delay_ms(2000);  // avoiding transient state when module is power on
@@ -991,7 +991,7 @@ Module_Status EMG_SetThreshold(uint8_t threshold)
 		exg.EMGPulseDetectionThreshold = voltThreshold;
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1017,7 +1017,7 @@ Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMse
 		}
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1039,7 +1039,7 @@ Module_Status CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus)
 			exg.eyeBlinkStatus = NO_BLINK;
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1061,7 +1061,7 @@ Module_Status ECG_Sample(float *sample, float *filteredSample )
 		*filteredSample = exg.filteredSample;
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1083,7 +1083,7 @@ Module_Status EOG_Sample(float *sample, float *filteredSample )
 		*filteredSample = exg.filteredSample;
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1105,7 +1105,7 @@ Module_Status EEG_Sample(float *sample, float *filteredSample )
 		*filteredSample = exg.filteredSample;
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1131,7 +1131,7 @@ Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedS
 		*envelopeSample =  exg.EMGEnvelopeSample;
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1149,7 +1149,7 @@ Module_Status ECG_HeartRate(uint8_t *heartRate)
 	if (exg.inputSignalType == ECG)
 		*heartRate = exg.heartRate;
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1168,7 +1168,7 @@ Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal)
 	uint8_t samplingFlag;
 	char sendData[26];
 	if(port == 0)
-	return H2BR0_ERR_WrongParams;
+	return H2BR0_ERR_WRONGPARAMS;
 
 	if(exg.inputSignalType == ECG || exg.inputSignalType == EOG || exg.inputSignalType == EEG || exg.inputSignalType == EMG)
 	{
@@ -1186,7 +1186,7 @@ Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal)
 		}
 	}
 	else
-		status = H2BR0_ERR_WrongParams;
+		status = H2BR0_ERR_WRONGPARAMS;
 
 	return status;
 }
@@ -1223,7 +1223,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 	Module_Status status =H2BR0_OK;
 
 	if(port == 0)
-		return H2BR0_ERR_WrongParams;
+		return H2BR0_ERR_WRONGPARAMS;
 
 	switch (inputSignal){
 	case ECG:
@@ -1359,7 +1359,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		break;
 
 	default:
-		status=H2BR0_ERR_WrongParams;
+		status=H2BR0_ERR_WRONGPARAMS;
 		break;
 
 	}
@@ -1387,7 +1387,7 @@ Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSign
 	period=timeout/Numofsamples;
 
 	if (timeout < MIN_PERIOD_MS || period < MIN_PERIOD_MS)
-		return H2BR0_ERR_WrongParams;
+		return H2BR0_ERR_WRONGPARAMS;
 
 	while(samples < Numofsamples)
 	{
