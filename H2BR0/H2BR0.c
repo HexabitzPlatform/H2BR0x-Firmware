@@ -112,7 +112,7 @@ const CLI_Command_Definition_t CLI_EMG_SampleCommandDefinition =
 const CLI_Command_Definition_t CLI_EMG_SetThresholdCommandDefinition =
 {
 	( const int8_t * ) "emg_setthreshold", /* The command string to type. */
-	( const int8_t * ) "emg_set_threshold:\r\n Parameters required to execute a readcellcapacity \r\n\r\n",
+	( const int8_t * ) "emg_setthreshold:\r\n Parameters required to execute a readcellcapacity \r\n\r\n",
 	CLI_EMG_SetThresholdCommand, /* The function to run. */
 	1 /* zero parameters are expected. */
 };
@@ -1337,12 +1337,12 @@ portBASE_TYPE CLI_ECG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	Module_Status status = H2BR0_OK;
 	float sample=0;
 	float filteredSample=0;
-	static const int8_t *pcOKMessage=(int8_t* )"ECG Sample is: %0.5f \n\rECG Filtered Sample is: %0.5f\n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"ECG Sample is:            %0.5f \n\rECG Filtered Sample is:   %0.5f\n\r";
 	static const int8_t *pcErrorsMessage =(int8_t* )"Error Params!\n\r";
 
 		(void )xWriteBufferLen;
 		configASSERT(pcWriteBuffer);
-		EXG_Init(ECG);
+        EXG_Init(ECG);
 	 	status=ECG_Sample(&sample,&filteredSample);
 
 	 if(status == H2BR0_OK)
@@ -1363,7 +1363,7 @@ portBASE_TYPE CLI_EOG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	Module_Status status = H2BR0_OK;
 	float sample=0;
 	float filteredSample=0;
-	static const int8_t *pcOKMessage=(int8_t* )"EOG Sample is: %0.5f \n\r EOG Filtered Sample is: %0.5f \n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"EOG Sample is:            %0.5f \n\r EOG Filtered Sample is:  %0.5f \n\r";
 	static const int8_t *pcErrorsMessage =(int8_t* )"Error Params!\n\r";
 
 		(void )xWriteBufferLen;
@@ -1389,7 +1389,7 @@ portBASE_TYPE CLI_EEG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	Module_Status status = H2BR0_OK;
 	float sample=0;
 	float filteredSample=0;
-	static const int8_t *pcOKMessage=(int8_t* )"EEG Sample is: %0.5f \n\rEEG Filtered Sample is: %0.5f\n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"EEG Sample is:            %0.5f \n\rEEG Filtered Sample is:   %0.5f\n\r";
 	static const int8_t *pcErrorsMessage =(int8_t* )"Error Params!\n\r";
 
 		(void )xWriteBufferLen;
@@ -1417,7 +1417,7 @@ portBASE_TYPE CLI_EMG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	float filteredSample=0;
 	float rectifiedSample=0;
 	float envelopeSample=0;
-	static const int8_t *pcOKMessage=(int8_t* )"EMG Sample is: %0.5f \n\rEMG Filtered Sample is: %0.5f \n\rEMG Rectified Sample is: %0.5f \n\rEMG Envelope Sample is %0.5f \n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"EMG Sample is:            %0.5f \n\rEMG Filtered Sample is:   %0.5f \n\rEMG Rectified Sample is:  %0.5f \n\rEMG Envelope Sample is   %0.5f \n\r";
 	static const int8_t *pcErrorsMessage =(int8_t* )"Error Params!\n\r";
 
 		(void )xWriteBufferLen;
@@ -1444,7 +1444,7 @@ portBASE_TYPE CLI_EMG_SetThresholdCommand( int8_t *pcWriteBuffer, size_t xWriteB
 	int8_t *pcParameterString1;
 	portBASE_TYPE xParameterStringLength1 =0;
 	uint8_t threshold = 0;
-	static const int8_t *pcOKMessage=(int8_t* )"EMG Signal is on at Threshold %d%%\n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"EMG Signal is on at Threshold %d\n\r";
 	static const int8_t *pcErrorMessage =(int8_t* )"Error Threshold!\n\r";
 
 		(void )xWriteBufferLen;
@@ -1473,7 +1473,7 @@ portBASE_TYPE CLI_EMG_CheckPulseCommand( int8_t *pcWriteBuffer, size_t xWriteBuf
 	Module_Status status = H2BR0_OK;
 	uint8_t EMGDetectionFlag=0;
 	uint16_t EMGDurationMsec=0;
-	static const int8_t *pcOKMessage=(int8_t* )"EMG Detection Flag is: %d%%\n\rEMG Duration Msec is: %d%%\n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"EMG Detection Flag is:    %d\n\rEMG Duration Msec is:     %d\n\r";
 	static const int8_t *pcErrorsMessage =(int8_t* )"Error Params!\n\r";
 
 		(void )xWriteBufferLen;
@@ -1525,18 +1525,22 @@ portBASE_TYPE CLI_ECG_HeartRateCommand( int8_t *pcWriteBuffer, size_t xWriteBuff
 portBASE_TYPE CLI_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	EyeBlinkingStatus eyeBlinkStatus;
-	static const int8_t *pcOKMessage=(int8_t* )"Eye Blink Status is:%s \n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"Eye Blink Status is: %s \n\r";
 	static const int8_t *pcErrorsMessage =(int8_t* )"Error Params!\n\r";
-
+	const char* eyeBlinkStatusStrings[] = {
+	    "No blink",
+	    "Right blink",
+	    "Left blink"
+	};
 		(void )xWriteBufferLen;
 		configASSERT(pcWriteBuffer);
 
+		EXG_Init(EOG);
 	 	status=CheckEyeBlink(&eyeBlinkStatus);
 
 	 if(status == H2BR0_OK)
 	 {
-			 sprintf((char* )pcWriteBuffer,(char* )pcOKMessage,eyeBlinkStatus);
-
+		sprintf((char* )pcWriteBuffer,(char* )pcOKMessage,eyeBlinkStatusStrings[eyeBlinkStatus]);
 	 }
 
 	 else if(status == H2BR0_ERROR)
@@ -1550,9 +1554,14 @@ portBASE_TYPE CLI_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBuff
 portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	LeadsStatus_EXG leadsStatus;
-	static const int8_t *pcOKMessage=(int8_t* )"Electrodes Status is:%s \n\r";
+	static const int8_t *pcOKMessage=(int8_t* )"Electrodes Status is: %s \n\r";
 	static const int8_t *pcErrorsMessage =(int8_t* )"Error Params!\n\r";
-
+	const char* electrodesStatusStrings[] = {
+			"LeadP Connected LeadN Connected",
+			"LeadP Connected LeadN Not Connected",
+			"LeadP Not Connected LeadN Connected",
+			"LeadP Not Connected LeadN Not Connected"
+	};
 		(void )xWriteBufferLen;
 		configASSERT(pcWriteBuffer);
 
@@ -1560,7 +1569,7 @@ portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBuffer
 
 	 if(status == H2BR0_OK)
 	 {
-			 sprintf((char* )pcWriteBuffer,(char* )pcOKMessage,leadsStatus);
+			 sprintf((char* )pcWriteBuffer,(char* )pcOKMessage,electrodesStatusStrings[leadsStatus]);
 
 	 }
 
