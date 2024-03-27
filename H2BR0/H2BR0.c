@@ -446,7 +446,7 @@ Module_Status Module_MessagingTask(uint16_t code,uint8_t port,uint8_t src,uint8_
 //    uint8_t EMGDetectionFlag=0;
 //    uint16_t EMGDurationMsec=0;
 //    uint8_t heartRate=0;
-//    uint8_t module,port;
+//    uint8_t module;
 //	switch(code){
 //	case CODE_H2BR0_ECG_Sample:
 //		{
@@ -507,9 +507,9 @@ Module_Status Module_MessagingTask(uint16_t code,uint8_t port,uint8_t src,uint8_
 //
 //			break;
 //		}
-//	case CODE_H2BR0_EMG_LeadsStatus:
+//	case CODE_H2BR0_LeadsStatus:
 //		{
-//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],batVolt);
+//
 //			break;
 //		}
 //		default:

@@ -7,8 +7,8 @@
  	 	 	 	 (Description_of_module)
 
 (Description of Special module peripheral configuration):
->>Interrupt mode timer (in which the signal specified by the function is processed EXG_SignalProcessing).
->>ADC to read the analog signal of the signals.
+>> Interrupt mode timer (in which the signal specified by the function is processed EXG_SignalProcessing).
+>> ADC to read the analog signal of the signals.
 >>
 
  */
