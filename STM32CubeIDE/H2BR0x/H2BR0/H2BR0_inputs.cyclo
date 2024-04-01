@@ -6,9 +6,7 @@ H2BR0_inputs.c:359:6:ResetAttachedButtonStates	4
 H2BR0_inputs.c:375:12:AddPortButton	6
 H2BR0_inputs.c:445:12:RemovePortButton	8
 H2BR0_inputs.c:528:12:SetButtonEvents	47
-H2BR0_inputs.c:642:6:MX_ADC_Init	2
-H2BR0_inputs.c:663:6:HAL_ADC_MspInit	2
-H2BR0_inputs.c:684:6:HAL_ADC_MspDeInit	2
+H2BR0_inputs.c:642:6:MX_ADC_Init	1
 H2BR0_inputs.c:707:6:ADCSelectChannel	4
 H2BR0_inputs.c:720:6:ReadADCChannel	4
 H2BR0_inputs.c:758:6:ReadTempAndVref	6

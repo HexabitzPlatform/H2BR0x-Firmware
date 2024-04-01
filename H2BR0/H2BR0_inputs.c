@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.2.9 - Copyright (C) 2017-2023 Hexabitz
+ BitzOS (BOS) V0.3.2 - Copyright (C) 2017-2024 Hexabitz
  All rights reserved
 
  File Name     : BOS_inputs.c
@@ -640,67 +640,67 @@ BOS_Status SetButtonEvents(uint8_t port, uint8_t clicked, uint8_t dbl_clicked,
  *
  */
 void MX_ADC_Init(void) {
-	hadc.Instance = ADC1;
-	hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-	hadc.Init.Resolution = ADC_RESOLUTION_12B;
-	hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-	hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
-	hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-	hadc.Init.LowPowerAutoWait = DISABLE;
-	hadc.Init.LowPowerAutoPowerOff = DISABLE;
-	hadc.Init.ContinuousConvMode = ENABLE;
-	hadc.Init.DiscontinuousConvMode = DISABLE;
-	hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-	hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-	hadc.Init.DMAContinuousRequests = DISABLE;
-	hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-
-	if (HAL_ADC_Init(&hadc) != HAL_OK) {
-		Error_Handler();
-	}
-	ADC_flag = 1;
+//	hadc.Instance = ADC1;
+//	hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+//	hadc.Init.Resolution = ADC_RESOLUTION_12B;
+//	hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+//	hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
+//	hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+//	hadc.Init.LowPowerAutoWait = DISABLE;
+//	hadc.Init.LowPowerAutoPowerOff = DISABLE;
+//	hadc.Init.ContinuousConvMode = ENABLE;
+//	hadc.Init.DiscontinuousConvMode = DISABLE;
+//	hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+//	hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+//	hadc.Init.DMAContinuousRequests = DISABLE;
+//	hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+//
+//	if (HAL_ADC_Init(&hadc) != HAL_OK) {
+//		Error_Handler();
+//	}
+//	ADC_flag = 1;
 }
-void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle) {
+//void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle) {
 
-	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-		/* ADC1 clock enable */
-		__HAL_RCC_ADC_CLK_ENABLE();
-		__HAL_RCC_GPIOA_CLK_ENABLE();
-		/**ADC GPIO Configuration
-		 PA2     ------> ADC_IN2
-		 PA3     ------> ADC_IN3
-		 PA4     ------> ADC_IN4
-		 PA5     ------> ADC_IN5
-		 */
-		if(flag_ADC_Select==1){
-		GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5;
-		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);}
+//	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+//		/* ADC1 clock enable */
+//		__HAL_RCC_ADC_CLK_ENABLE();
+//		__HAL_RCC_GPIOA_CLK_ENABLE();
+//		/**ADC GPIO Configuration
+//		 PA2     ------> ADC_IN2
+//		 PA3     ------> ADC_IN3
+//		 PA4     ------> ADC_IN4
+//		 PA5     ------> ADC_IN5
+//		 */
+//		if(flag_ADC_Select==1){
+//		GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5;
+//		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+//		GPIO_InitStruct.Pull = GPIO_NOPULL;
+//		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);}
+//
+//}
 
-}
 
-
-void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle) {
-
-	if (adcHandle->Instance == ADC1) {
-		/* USER CODE BEGIN ADC1_MspDeInit 0 */
-
-		/* USER CODE END ADC1_MspDeInit 0 */
-		/* Peripheral clock disable */
-		__HAL_RCC_ADC_CLK_DISABLE();
-
-		/**ADC GPIO Configuration
-		 PA0     ------> ADC_IN0
-		 PA1     ------> ADC_IN1
-		 */
-		HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0 | GPIO_PIN_1);
-
-		/* USER CODE BEGIN ADC1_MspDeInit 1 */
-
-		/* USER CODE END ADC1_MspDeInit 1 */
-	}
-}
+//void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle) {
+//
+//	if (adcHandle->Instance == ADC1) {
+//		/* USER CODE BEGIN ADC1_MspDeInit 0 */
+//
+//		/* USER CODE END ADC1_MspDeInit 0 */
+//		/* Peripheral clock disable */
+//		__HAL_RCC_ADC_CLK_DISABLE();
+//
+//		/**ADC GPIO Configuration
+//		 PA0     ------> ADC_IN0
+//		 PA1     ------> ADC_IN1
+//		 */
+//		HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0 | GPIO_PIN_1);
+//
+//		/* USER CODE BEGIN ADC1_MspDeInit 1 */
+//
+//		/* USER CODE END ADC1_MspDeInit 1 */
+//	}
+//}
 
 /** select port 2 & port 3 for the selected ADC regular channel to be converted. */
 

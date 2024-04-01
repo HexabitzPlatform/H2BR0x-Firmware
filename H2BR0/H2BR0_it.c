@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.2.9 - Copyright (C) 2017-2023 Hexabitz
+ BitzOS (BOS) V0.3.2 - Copyright (C) 2017-2024 Hexabitz
  All rights reserved
 
  File Name     : H2BR0_it.c
@@ -23,10 +23,26 @@ extern uint8_t UARTRxBufIndex[NumOfPorts];
 
 extern TaskHandle_t xCommandConsoleTaskHandle; // CLI Task handler.
 
-
+ TIM_HandleTypeDef htim2;
+ extern DMA_HandleTypeDef hdma_adc1;
 /******************************************************************************/
 /*            Cortex-M0 Processor Interruption and Exception Handlers         */
 /******************************************************************************/
+ /**
+   * @brief This function handles Non maskable interrupt.
+   */
+ void NMI_Handler(void)
+ {
+   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
+
+   /* USER CODE END NonMaskableInt_IRQn 0 */
+   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+   while (1)
+   {
+   }
+   /* USER CODE END NonMaskableInt_IRQn 1 */
+ }
+
 
 /**
  * @brief This function handles System tick timer.
@@ -52,7 +68,7 @@ void HardFault_Handler(void){
 }
 
 /******************************************************************************/
-/* STM32F0xx Peripheral Interrupt Handlers                                    */
+/* STM32G0xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32f0xx.s).                    */
@@ -127,7 +143,7 @@ void USART3_4_5_6_LPUART1_IRQHandler(void){
  */
 void DMA1_Ch1_IRQHandler(void){
 	/* Streaming or messaging DMA on P1 */
-	DMA_IRQHandler(P1);
+	DMA_IRQHandler(P4);
 	
 }
 
@@ -138,16 +154,16 @@ void DMA1_Ch1_IRQHandler(void){
  */
 void DMA1_Ch2_3_DMA2_Ch1_2_IRQHandler(void){
 	/* Streaming or messaging DMA on P5 */
-	if(HAL_DMA_GET_IT_SOURCE(DMA2,DMA_ISR_GIF2) == SET){
-		DMA_IRQHandler(P5);
+	if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF2) == SET){
+		DMA_IRQHandler(P2);
 		/* Streaming or messaging DMA on P2 */
 	}
 	else if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF3) == SET){
-		DMA_IRQHandler(P2);
+		DMA_IRQHandler(P3);
 		/* TX messaging DMA 0 */
 	}
-	else if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF2) == SET){
-		HAL_DMA_IRQHandler(&msgTxDMA[0]);
+	else if(HAL_DMA_GET_IT_SOURCE(DMA2,DMA_ISR_GIF1) == SET){
+		HAL_DMA_IRQHandler(&hdma_adc1);;
 	}
 }
 
@@ -159,11 +175,11 @@ void DMA1_Ch2_3_DMA2_Ch1_2_IRQHandler(void){
 void DMA1_Ch4_7_DMA2_Ch3_5_IRQHandler(void){
 	/* Streaming or messaging DMA on P3 */
 	if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF5) == SET){
-		DMA_IRQHandler(P3);
+		DMA_IRQHandler(P1);
 		/* Streaming or messaging DMA on P4 */
 	}
-	else if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF6) == SET){
-		DMA_IRQHandler(P4);
+	else if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF4) == SET){
+		DMA_IRQHandler(P5);
 		/* Streaming or messaging DMA on P6 */
 	}
 	else if(HAL_DMA_GET_IT_SOURCE(DMA2,DMA_ISR_GIF3) == SET){
@@ -207,6 +223,10 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart){
 		/* Or parse the circular buffer and restart messaging DMA for this port */
 	}
 	else{
+		index_input[port - 1] = 0;
+		index_process[port - 1] = 0;
+		memset((uint8_t* )&UARTRxBuf[port - 1], 0, MSG_RX_BUF_SIZE);
+		HAL_UART_Receive_DMA(huart,(uint8_t* )&UARTRxBuf[port - 1] ,MSG_RX_BUF_SIZE);
 		MsgDMAStopped[port - 1] = true;		// Set a flag here and let the backend task restart DMA after parsing the buffer	
 	}
 }
@@ -214,79 +234,79 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart){
 /*-----------------------------------------------------------*/
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	uint8_t port_number = GetPort(huart);
-	uint8_t port_index = port_number - 1;
-	if(Rx_Data[port_index] == 0x0D && portStatus[port_number] == FREE)
-	{
-		for(int i=0;i<=NumOfPorts;i++) // Free previous CLI port
-		{
-			if(portStatus[i] == CLI)
-			{
-				portStatus[i] = FREE;
-			}
-		}
-		portStatus[port_number] =CLI; // Continue the CLI session on this port
-		PcPort = port_number;
-		xTaskNotifyGive(xCommandConsoleTaskHandle);
-
-		if(Activate_CLI_For_First_Time_Flag == 1) Read_In_CLI_Task_Flag = 1;
-		Activate_CLI_For_First_Time_Flag = 1;
-
-	}
-	else if(portStatus[port_number] == CLI)
-	{
-		Read_In_CLI_Task_Flag = 1;
-	}
-
-	else if(Rx_Data[port_index] == 'H' && portStatus[port_number] == FREE)
-	{
-		portStatus[port_number] =H_Status; // H  Character was received, waiting for Z character.
-	}
-
-	else if(Rx_Data[port_index] == 'Z' && portStatus[port_number] == H_Status)
-	{
-		portStatus[port_number] =Z_Status; // Z  Character was received, waiting for length byte.
-	}
-
-	else if(Rx_Data[port_index] != 'Z' && portStatus[port_number] == H_Status)
-	{
-		portStatus[port_number] =FREE; // Z  Character was not received, so there is no message to receive.
-	}
-
-	else if(portStatus[port_number] == Z_Status)
-	{
-		portStatus[port_number] =MSG; // Receive length byte.
-		MSG_Buffer[port_index][MSG_Buffer_Index_End[port_index]][2] = Rx_Data[port_index];
-		temp_index[port_index] = 3;
-		temp_length[port_index] = Rx_Data[port_index] + 1;
-	}
-
-	else if(portStatus[port_number] == MSG)
-	{
-		if(temp_length[port_index] > 1)
-		{
-			MSG_Buffer[port_index][MSG_Buffer_Index_End[port_index]][temp_index[port_index]] = Rx_Data[port_index];
-			temp_index[port_index]++;
-			temp_length[port_index]--;
-		}
-		else
-		{
-			MSG_Buffer[port_index][MSG_Buffer_Index_End[port_index]][temp_index[port_index]] = Rx_Data[port_index];
-			temp_index[port_index]++;
-			temp_length[port_index]--;
-			MSG_Buffer_Index_End[port_index]++;
-			if(MSG_Buffer_Index_End[port_index] == MSG_COUNT) MSG_Buffer_Index_End[port_index] = 0;
-
-
-			Process_Message_Buffer[Process_Message_Buffer_Index_End] = port_number;
-			Process_Message_Buffer_Index_End++;
-			if(Process_Message_Buffer_Index_End == MSG_COUNT) Process_Message_Buffer_Index_End = 0;
-			portStatus[port_number] =FREE; // End of receiving message.
-		}
-	}
-
-//		HAL_UART_Receive_DMA(huart,(uint8_t* )&Rx_Data[GetPort(huart) - 1] , 1);
-	HAL_UART_Receive_IT(huart,(uint8_t* )&Rx_Data[GetPort(huart) - 1] , 1);
+//	uint8_t port_number = GetPort(huart);
+//	uint8_t port_index = port_number - 1;
+//	if(Rx_Data[port_index] == 0x0D && portStatus[port_number] == FREE)
+//	{
+//		for(int i=0;i<=NumOfPorts;i++) // Free previous CLI port
+//		{
+//			if(portStatus[i] == CLI)
+//			{
+//				portStatus[i] = FREE;
+//			}
+//		}
+//		portStatus[port_number] =CLI; // Continue the CLI session on this port
+//		PcPort = port_number;
+//		xTaskNotifyGive(xCommandConsoleTaskHandle);
+//
+//		if(Activate_CLI_For_First_Time_Flag == 1) Read_In_CLI_Task_Flag = 1;
+//		Activate_CLI_For_First_Time_Flag = 1;
+//
+//	}
+//	else if(portStatus[port_number] == CLI)
+//	{
+//		Read_In_CLI_Task_Flag = 1;
+//	}
+//
+//	else if(Rx_Data[port_index] == 'H' && portStatus[port_number] == FREE)
+//	{
+//		portStatus[port_number] =H_Status; // H  Character was received, waiting for Z character.
+//	}
+//
+//	else if(Rx_Data[port_index] == 'Z' && portStatus[port_number] == H_Status)
+//	{
+//		portStatus[port_number] =Z_Status; // Z  Character was received, waiting for length byte.
+//	}
+//
+//	else if(Rx_Data[port_index] != 'Z' && portStatus[port_number] == H_Status)
+//	{
+//		portStatus[port_number] =FREE; // Z  Character was not received, so there is no message to receive.
+//	}
+//
+//	else if(portStatus[port_number] == Z_Status)
+//	{
+//		portStatus[port_number] =MSG; // Receive length byte.
+//		MSG_Buffer[port_index][MSG_Buffer_Index_End[port_index]][2] = Rx_Data[port_index];
+//		temp_index[port_index] = 3;
+//		temp_length[port_index] = Rx_Data[port_index] + 1;
+//	}
+//
+//	else if(portStatus[port_number] == MSG)
+//	{
+//		if(temp_length[port_index] > 1)
+//		{
+//			MSG_Buffer[port_index][MSG_Buffer_Index_End[port_index]][temp_index[port_index]] = Rx_Data[port_index];
+//			temp_index[port_index]++;
+//			temp_length[port_index]--;
+//		}
+//		else
+//		{
+//			MSG_Buffer[port_index][MSG_Buffer_Index_End[port_index]][temp_index[port_index]] = Rx_Data[port_index];
+//			temp_index[port_index]++;
+//			temp_length[port_index]--;
+//			MSG_Buffer_Index_End[port_index]++;
+//			if(MSG_Buffer_Index_End[port_index] == MSG_COUNT) MSG_Buffer_Index_End[port_index] = 0;
+//
+//
+//			Process_Message_Buffer[Process_Message_Buffer_Index_End] = port_number;
+//			Process_Message_Buffer_Index_End++;
+//			if(Process_Message_Buffer_Index_End == MSG_COUNT) Process_Message_Buffer_Index_End = 0;
+//			portStatus[port_number] =FREE; // End of receiving message.
+//		}
+//	}
+//
+////		HAL_UART_Receive_DMA(huart,(uint8_t* )&Rx_Data[GetPort(huart) - 1] , 1);
+//	HAL_UART_Receive_IT(huart,(uint8_t* )&Rx_Data[GetPort(huart) - 1] , 1);
 }
 
 /*-----------------------------------------------------------*/
@@ -327,5 +347,33 @@ void vApplicationMallocFailedHook(void){
 	for(;;);
 }
 /*-----------------------------------------------------------*/
+
+/**
+  * @brief This function handles DMA1 channel 1 interrupt.
+  */
+void DMA1_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM2 global interrupt.
+  */
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+
+  /* USER CODE END TIM2_IRQn 1 */
+}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -1,4 +1,6 @@
-H2BR0_timers.c:31:6:TIM_USEC_Init	1
-H2BR0_timers.c:72:6:TIM_MSEC_Init	1
-H2BR0_timers.c:106:6:StartMicroDelay	3
-H2BR0_timers.c:124:6:StartMilliDelay	3
+H2BR0_timers.c:32:6:TIM_USEC_Init	1
+H2BR0_timers.c:56:6:TIM_MSEC_Init	1
+H2BR0_timers.c:77:6:MX_TIM2_Init	1
+H2BR0_timers.c:123:6:HAL_TIM_Base_MspDeInit	2
+H2BR0_timers.c:140:6:StartMicroDelay	3
+H2BR0_timers.c:158:6:StartMilliDelay	3

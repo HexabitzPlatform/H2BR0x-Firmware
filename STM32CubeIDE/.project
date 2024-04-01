@@ -134,6 +134,16 @@
 			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_MemoryMap.h</locationURI>
 		</link>
 		<link>
+			<name>H2BR0/H2BR0_adc.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_adc.c</locationURI>
+		</link>
+		<link>
+			<name>H2BR0/H2BR0_adc.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_adc.h</locationURI>
+		</link>
+		<link>
 			<name>H2BR0/H2BR0_dma.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_dma.c</locationURI>
@@ -187,6 +197,11 @@
 			<name>H2BR0/H2BR0_timers.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_timers.c</locationURI>
+		</link>
+		<link>
+			<name>H2BR0/H2BR0_timers.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/H2BR0/H2BR0_timers.h</locationURI>
 		</link>
 		<link>
 			<name>H2BR0/H2BR0_uart.c</name>
@@ -1029,4 +1044,10 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Thirdparty/STM32G0xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h</locationURI>
 		</link>
 	</linkedResources>
+	<variableList>
+		<variable>
+			<name>copy_PARENT</name>
+			<value>$%7BPARENT-2-PROJECT_LOC%7D/H0FR7x-Firmware</value>
+		</variable>
+	</variableList>
 </projectDescription>
