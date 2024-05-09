@@ -259,6 +259,8 @@ Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal);
 Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal);
 Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+
 /* -----------------------------------------------------------------------
  |								Commands							      ||
 /* -----------------------------------------------------------------------

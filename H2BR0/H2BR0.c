@@ -48,6 +48,7 @@ uint8_t cont ;
 uint8_t tofMode ;
 /* Private function prototypes -----------------------------------------------*/
 Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 void ExecuteMonitor(void);
 void EXGTask(void *argument);
 void EXG_Enable();
@@ -582,6 +583,9 @@ void EXGTask(void *argument){
 		switch(tofMode){
 		case STREAM_TO_PORT :
 			ExportStreanToPort(module2, port2, mode2, Numofsamples2, timeout2);
+			break;
+		case STREAM_TO_Terminal :
+			ExportStreanToTerminal( port1, mode1, Numofsamples1, timeout1);
 			break;
 
 			default:
@@ -1471,6 +1475,7 @@ Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSign
 	return status;
 
 }
+/*-----------------------------------------------------------*/
 Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
 {
 	Module_Status status =H2BR0_OK;
@@ -1484,6 +1489,41 @@ Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG in
 	while(samples < Numofsamples)
 	{
 	status=SampletoPort(module,port,inputSignal);
+	vTaskDelay(pdMS_TO_TICKS(period));
+	samples++;
+	}
+	tofMode=20;
+	samples=0;
+	return status;
+
+}
+/*-----------------------------------------------------------*/
+Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+{
+	Module_Status status =H2BR0_OK;
+	tofMode = STREAM_TO_Terminal;
+	port1 = port;
+	Numofsamples1 = Numofsamples;
+	timeout1 = timeout;
+	mode1 = inputSignal;
+	return status;
+
+}
+
+/*-----------------------------------------------------------*/
+Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+{
+	Module_Status status =H2BR0_OK;
+	uint32_t samples=0;
+	uint32_t period=0;
+	period=timeout/Numofsamples;
+
+	if (timeout < MIN_PERIOD_MS || period < MIN_PERIOD_MS)
+		return H2BR0_ERR_WRONGPARAMS;
+
+	while(samples < Numofsamples)
+	{
+	status=PlotToTerminal(port,inputSignal);
 	vTaskDelay(pdMS_TO_TICKS(period));
 	samples++;
 	}
