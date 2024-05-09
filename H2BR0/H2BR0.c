@@ -36,11 +36,20 @@ module_param_t modParam[NUM_MODULE_PARAMS] ={{.paramPtr = NULL, .paramFormat =FM
 
 /* Private variables ---------------------------------------------------------*/
 EXG_t exg;
-
+TaskHandle_t EXGTaskHandle = NULL;
+uint8_t port1, module1,mode1;
+uint8_t port2 ,module2,mode2;
+uint32_t Numofsamples1 ,timeout1;
+uint8_t port3 ,module3,mode3;
+uint32_t Numofsamples2 ,timeout2;
+uint32_t Numofsamples3 ,timeout3;
+uint8_t flag ;
+uint8_t cont ;
+uint8_t tofMode ;
 /* Private function prototypes -----------------------------------------------*/
+Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 void ExecuteMonitor(void);
 void EXGTask(void *argument);
-
 void EXG_Enable();
 void EXG_Disable();
 void EXG_Reset();
@@ -433,6 +442,7 @@ void Module_Peripheral_Init(void){
 			index_dma[i - 1] = &(DMA1_Channel5->CNDTR);
 		}
 	}
+	 xTaskCreate(EXGTask,(const char* ) "EXGTask",configMINIMAL_STACK_SIZE,NULL,osPriorityNormal - osPriorityIdle,&EXGTaskHandle);
 
 }
 
@@ -557,29 +567,32 @@ void RegisterModuleCLICommands(void){
 
 /* Module special task function (if needed) */
 
-//void EXGTask(void *argument){
-//
-//	EyeBlinkingStatus eyeBlinkStatus;
-//	LeadsStatus_EXG wiresStatus;
-//
-//	/* Infinite loop */
-//	uint8_t cases; // Test variable.
-//
-//
-//	for(;;){
-//		/*  */
-//		switch(cases){
-//
-//
-//			default:
-//				osDelay(10);
-//				break;
-//		}
-//
-//		taskYIELD();
-//	}
-//
-//}
+void EXGTask(void *argument){
+
+	EyeBlinkingStatus eyeBlinkStatus;
+	LeadsStatus_EXG wiresStatus;
+
+	/* Infinite loop */
+	uint8_t cases; // Test variable.
+
+
+	for(;;){
+		/*  */
+
+		switch(tofMode){
+		case STREAM_TO_PORT :
+			ExportStreanToPort(module2, port2, mode2, Numofsamples2, timeout2);
+			break;
+
+			default:
+				osDelay(10);
+				break;
+		}
+
+		taskYIELD();
+	}
+
+}
 
 
 /*-----------------------------------------------------------*/
@@ -1449,6 +1462,18 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
 {
 	Module_Status status =H2BR0_OK;
+	tofMode = STREAM_TO_PORT;
+	port2 = port;
+	module2 = module;
+	Numofsamples2 = Numofsamples;
+	timeout2 = timeout;
+	mode2 = inputSignal;
+	return status;
+
+}
+Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+{
+	Module_Status status =H2BR0_OK;
 	uint32_t samples=0;
 	uint32_t period=0;
 	period=timeout/Numofsamples;
@@ -1462,6 +1487,7 @@ Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSign
 	vTaskDelay(pdMS_TO_TICKS(period));
 	samples++;
 	}
+	tofMode=20;
 	samples=0;
 	return status;
 

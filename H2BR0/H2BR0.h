@@ -141,6 +141,9 @@
 #define SHMITH_SHIFT                    0.03 // volt
 
 
+#define STREAM_TO_PORT          1
+#define STREAM_TO_Terminal      2
+
 /* Module EEPROM Variables */
 // Module Addressing Space 500 - 599
 #define _EE_MODULE							500		
