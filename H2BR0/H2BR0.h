@@ -139,7 +139,8 @@
 #define ECG_THRESHOLD                   0.25  //  volt
 #define FILTER_TRANSIENT_STATE_SAMPLES  30
 #define SHMITH_SHIFT                    0.03 // volt
-
+#define MIN_MEMS_PERIOD_MS				100
+#define MAX_MEMS_TIMEOUT_MS				0xFFFFFFFF
 
 #define STREAM_TO_PORT          1
 #define STREAM_TO_Terminal      2
@@ -154,6 +155,8 @@ typedef enum {
 	H2BR0_ERR_UNKNOWNMESSAGE,
 	H2BR0_ERR_WRONGPARAMS,
 	H2BR0_ERR_LEADS_NOTCONNECTED,
+	H2BR0_ERR_TERMINATED,
+	H2BR0_ERR_WrongParams,
 	H2BR0_ERROR =255
 } Module_Status;
 
