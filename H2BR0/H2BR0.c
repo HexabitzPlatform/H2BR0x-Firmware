@@ -459,84 +459,84 @@ void Module_Peripheral_Init(void){
 /* --- H2BR0 message processing task.
  */
 Module_Status Module_MessagingTask(uint16_t code,uint8_t port,uint8_t src,uint8_t dst,uint8_t shift){
-//	Module_Status result =H2BR0_OK;
-//	uint8_t uint8Data=0;
-//    uint16_t uint16Data=0;
-//    uint8_t EMGDetectionFlag=0;
-//    uint16_t EMGDurationMsec=0;
-//    uint8_t heartRate=0;
-//    uint8_t module;
-//	switch(code){
-//	case CODE_H2BR0_ECG_Sample:
-//		{
-//			EXG_Init(ECG);
-//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],ECG);
-//			break;
-//		}
-//	case CODE_H2BR0_EOG_Sample:
-//		{
-//			EXG_Init(EOG);
-//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EOG);
-//			break;
-//		}
-//	case CODE_H2BR0_EEG_Sample:
-//		{
-//			EXG_Init(EEG);
-//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EEG);
-//			break;
-//		}
-//	case CODE_H2BR0_EMG_Sample:
-//		{
-//			EXG_Init(EMG);
-//			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EMG);
-//			break;
-//		}
-//	case CODE_H2BR0_EMG_SetThreshold:
-//		{
-//			EXG_Init(EMG);
-//			EMG_SetThreshold(cMessage[port-1][shift]);
-//			break;
-//		}
-//	case CODE_H2BR0_EMG_CheckPulse:
-//		{
-//			module = cMessage[port-1][shift];
-//			port = cMessage[port-1][1+shift];
-//			EXG_Init(EMG);
-//			EMG_CheckPulse(&EMGDetectionFlag,&EMGDurationMsec);
-//			messageParams[0] =port;
-//			messageParams[1] =(uint8_t)EMGDetectionFlag;
-//			messageParams[2] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 0);
-//			messageParams[3] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 8);
-//			SendMessageToModule(module,CODE_PORT_FORWARD,4);
-//			break;
-//		}
-//	case CODE_H2BR0_ECG_HeartRate:
-//		{
-//			module = cMessage[port-1][shift];
-//		    port = cMessage[port-1][1+shift];
-//		    EXG_Init(ECG);
-//		    ECG_HeartRate(&heartRate);
-//		    messageParams[0] =port;
-//			messageParams[1] =(uint8_t)EMGDetectionFlag;
-//			SendMessageToModule(module,CODE_PORT_FORWARD,2);
-//			break;
-//		}
-//	case CODE_H2BR0_EOG_CheckEyeBlink:
-//		{
-//
-//			break;
-//		}
-//	case CODE_H2BR0_LeadsStatus:
-//		{
-//
-//			break;
-//		}
-//		default:
-//			result =H2BR0_ERR_UNKNOWNMESSAGE;
-//			break;
-//	}
-//
-//	return result;
+	Module_Status result =H2BR0_OK;
+	uint8_t uint8Data=0;
+    uint16_t uint16Data=0;
+    uint8_t EMGDetectionFlag=0;
+    uint16_t EMGDurationMsec=0;
+    uint8_t heartRate=0;
+    uint8_t module;
+	switch(code){
+	case CODE_H2BR0_ECG_Sample:
+		{
+			EXG_Init(ECG);
+			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],ECG);
+			break;
+		}
+	case CODE_H2BR0_EOG_Sample:
+		{
+			EXG_Init(EOG);
+			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EOG);
+			break;
+		}
+	case CODE_H2BR0_EEG_Sample:
+		{
+			EXG_Init(EEG);
+			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EEG);
+			break;
+		}
+	case CODE_H2BR0_EMG_Sample:
+		{
+			EXG_Init(EMG);
+			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EMG);
+			break;
+		}
+	case CODE_H2BR0_EMG_SetThreshold:
+		{
+			EXG_Init(EMG);
+			EMG_SetThreshold(cMessage[port-1][shift]);
+			break;
+		}
+	case CODE_H2BR0_EMG_CheckPulse:
+		{
+			module = cMessage[port-1][shift];
+			port = cMessage[port-1][1+shift];
+			EXG_Init(EMG);
+			EMG_CheckPulse(&EMGDetectionFlag,&EMGDurationMsec);
+			messageParams[0] =port;
+			messageParams[1] =(uint8_t)EMGDetectionFlag;
+			messageParams[2] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 0);
+			messageParams[3] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 8);
+			SendMessageToModule(module,CODE_PORT_FORWARD,4);
+			break;
+		}
+	case CODE_H2BR0_ECG_HeartRate:
+		{
+			module = cMessage[port-1][shift];
+		    port = cMessage[port-1][1+shift];
+		    EXG_Init(ECG);
+		    ECG_HeartRate(&heartRate);
+		    messageParams[0] =port;
+			messageParams[1] =(uint8_t)EMGDetectionFlag;
+			SendMessageToModule(module,CODE_PORT_FORWARD,2);
+			break;
+		}
+	case CODE_H2BR0_EOG_CheckEyeBlink:
+		{
+
+			break;
+		}
+	case CODE_H2BR0_LeadsStatus:
+		{
+
+			break;
+		}
+		default:
+			result =H2BR0_ERR_UNKNOWNMESSAGE;
+			break;
+	}
+
+	return result;
 }
 /* --- Get the port for a given UART. 
  */
@@ -1315,9 +1315,9 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 	static uint8_t temp[16]={0};
 	Module_Status status =H2BR0_OK;
 
-	if(port == 0)
-		return H2BR0_ERR_WRONGPARAMS;
-
+	if (port == 0 && module == myID) {
+		return H2BR0_ERR_WrongParams;
+	}
 	switch (inputSignal){
 	case ECG:
 		status=ECG_Sample(&sample,&filteredSample);
@@ -1335,7 +1335,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
-		messageParams[0] =port;
+		messageParams[0] =FMT_FLOAT;
 		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
 		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
 		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
@@ -1344,7 +1344,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
 		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
 		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
 		}
 		break;
 
@@ -1364,7 +1364,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
-		messageParams[0] =port;
+		messageParams[0] =FMT_FLOAT;
 		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
 		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
 		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
@@ -1373,7 +1373,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
 		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
 		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
 		}
 		break;
 
@@ -1393,7 +1393,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
-		messageParams[0] =port;
+		messageParams[0] =FMT_FLOAT;
 		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
 		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
 		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
@@ -1402,7 +1402,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
 		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
 		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
 		}
 		break;
 
@@ -1430,7 +1430,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
-		messageParams[0] =port;
+		messageParams[0] =FMT_FLOAT;
 		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
 		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
 		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
@@ -1447,7 +1447,7 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		messageParams[14] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 8);
 		messageParams[15] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 16);
 		messageParams[16] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 24);
-		SendMessageToModule(module,CODE_PORT_FORWARD,sizeof(float)+1);
+		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
 		}
 		break;
 
