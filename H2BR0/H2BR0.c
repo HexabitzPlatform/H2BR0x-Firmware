@@ -1335,16 +1335,20 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
+			if (H2BR0_OK == status)
+					messageParams[1] = BOS_OK;
+				else
+					messageParams[1] = BOS_ERROR;
 		messageParams[0] =FMT_FLOAT;
-		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[9] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+2);
 		}
 		break;
 
@@ -1364,16 +1368,20 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
+			if (H2BR0_OK == status)
+					messageParams[1] = BOS_OK;
+				else
+					messageParams[1] = BOS_ERROR;
 		messageParams[0] =FMT_FLOAT;
-		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[9] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+2);
 		}
 		break;
 
@@ -1393,16 +1401,20 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
+			if (H2BR0_OK == status)
+					messageParams[1] = BOS_OK;
+				else
+					messageParams[1] = BOS_ERROR;
 		messageParams[0] =FMT_FLOAT;
-		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[9] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+2);
 		}
 		break;
 
@@ -1430,24 +1442,28 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
 		}
 		else
 		{
+			if (H2BR0_OK == status)
+					messageParams[1] = BOS_OK;
+				else
+					messageParams[1] = BOS_ERROR;
 		messageParams[0] =FMT_FLOAT;
-		messageParams[1] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		messageParams[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		messageParams[9] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 0);
-		messageParams[10] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 8);
-		messageParams[11] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 16);
-		messageParams[12] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 24);
-		messageParams[13] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 0);
-		messageParams[14] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 8);
-		messageParams[15] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 16);
-		messageParams[16] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 24);
-		SendMessageToModule(module,CODE_READ_RESPONSE,sizeof(float)+1);
+		messageParams[2] = (uint8_t)((*(uint32_t *) &sample) >> 0);
+		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 8);
+		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 16);
+		messageParams[5] = (uint8_t)((*(uint32_t *) &sample) >> 24);
+		messageParams[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
+		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
+		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
+		messageParams[9] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
+		messageParams[10] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 0);
+		messageParams[11] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 8);
+		messageParams[12] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 16);
+		messageParams[13] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 24);
+		messageParams[14] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 0);
+		messageParams[15] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 8);
+		messageParams[16] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 16);
+		messageParams[17] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 24);
+		SendMessageToModule(module,CODE_READ_RESPONSE,18);
 		}
 		break;
 
