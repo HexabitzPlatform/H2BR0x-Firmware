@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.3.3 - Copyright (C) 2017-2024 Hexabitz
+ BitzOS (BOS) V0.3.4 - Copyright (C) 2017-2024 Hexabitz
  All rights reserved
  
  File Name     : H2BR0.h
@@ -139,7 +139,11 @@
 #define ECG_THRESHOLD                   0.25  //  volt
 #define FILTER_TRANSIENT_STATE_SAMPLES  30
 #define SHMITH_SHIFT                    0.03 // volt
+#define MIN_MEMS_PERIOD_MS				100
+#define MAX_MEMS_TIMEOUT_MS				0xFFFFFFFF
 
+#define STREAM_TO_PORT          1
+#define STREAM_TO_Terminal      2
 
 /* Module EEPROM Variables */
 // Module Addressing Space 500 - 599
@@ -151,6 +155,8 @@ typedef enum {
 	H2BR0_ERR_UNKNOWNMESSAGE,
 	H2BR0_ERR_WRONGPARAMS,
 	H2BR0_ERR_LEADS_NOTCONNECTED,
+	H2BR0_ERR_TERMINATED,
+	H2BR0_ERR_WrongParams,
 	H2BR0_ERROR =255
 } Module_Status;
 
@@ -256,6 +262,8 @@ Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal);
 Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal);
 Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+
 /* -----------------------------------------------------------------------
  |								Commands							      ||
 /* -----------------------------------------------------------------------
