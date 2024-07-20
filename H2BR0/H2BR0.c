@@ -499,26 +499,39 @@ Module_Status Module_MessagingTask(uint16_t code,uint8_t port,uint8_t src,uint8_
 		}
 	case CODE_H2BR0_EMG_CheckPulse:
 		{
+			Module_Status status =H2BR0_OK;
 			module = cMessage[port-1][shift];
 			port = cMessage[port-1][1+shift];
 			EXG_Init(EMG);
-			EMG_CheckPulse(&EMGDetectionFlag,&EMGDurationMsec);
-			messageParams[0] =port;
-			messageParams[1] =(uint8_t)EMGDetectionFlag;
-			messageParams[2] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 0);
-			messageParams[3] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 8);
-			SendMessageToModule(module,CODE_PORT_FORWARD,4);
+			status = EMG_CheckPulse(&EMGDetectionFlag,&EMGDurationMsec);
+			if (H2BR0_OK == status)
+						messageParams[1] = BOS_OK;
+					else
+						messageParams[1] = BOS_ERROR;
+			messageParams[0] =FMT_UINT16;
+			messageParams[2] =2;
+			messageParams[3] =(uint8_t)((*(uint16_t *) &EMGDetectionFlag) >> 0);
+			messageParams[4] =(uint8_t)((*(uint16_t *) &EMGDetectionFlag) >> 8);
+			messageParams[5] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 0);
+			messageParams[6] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 8);
+			SendMessageToModule(module,CODE_PORT_FORWARD,7);
 			break;
 		}
 	case CODE_H2BR0_ECG_HeartRate:
 		{
+			Module_Status status =H2BR0_OK;
 			module = cMessage[port-1][shift];
 		    port = cMessage[port-1][1+shift];
 		    EXG_Init(ECG);
-		    ECG_HeartRate(&heartRate);
-		    messageParams[0] =port;
-			messageParams[1] =(uint8_t)EMGDetectionFlag;
-			SendMessageToModule(module,CODE_PORT_FORWARD,2);
+		    status = ECG_HeartRate(&heartRate);
+			if (H2BR0_OK == status)
+						messageParams[1] = BOS_OK;
+					else
+						messageParams[1] = BOS_ERROR;
+			messageParams[0] =FMT_UINT8;
+			messageParams[2] =1;
+			messageParams[3] =(uint8_t)EMGDetectionFlag;
+			SendMessageToModule(module,CODE_PORT_FORWARD,4);
 			break;
 		}
 	case CODE_H2BR0_EOG_CheckEyeBlink:
