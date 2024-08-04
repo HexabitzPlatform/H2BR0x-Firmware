@@ -1,4 +1,0 @@
-..\..\H2BR0\H2BR0_gpio.c:22:6:GPIO_Init	1
-..\..\H2BR0\H2BR0_gpio.c:60:6:IND_LED_Init	1
-..\..\H2BR0\H2BR0_gpio.c:75:9:IsFactoryReset	3
-..\..\H2BR0\H2BR0_gpio.c:126:12:GetPortGPIOs	6
