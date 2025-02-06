@@ -39,6 +39,7 @@ typedef void (*SampleMemsToString)(char *, size_t);
 /* Private variables ---------------------------------------------------------*/
 static bool stopStream = false;
 TaskHandle_t EXGTaskHandle = NULL;
+TaskHandle_t EXGSignalProcessingHandle = NULL;
 EXG_t exg;
 uint8_t port1, module1,mode1;
 uint8_t port2 ,module2,mode2;
@@ -51,6 +52,7 @@ Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG in
 Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 void ExecuteMonitor(void);
 void EXGTask(void *argument);
+void EXGSignalProcessing(void *argument);
 void EXG_Enable();
 void EXG_Disable();
 void EXG_Reset();
@@ -70,6 +72,7 @@ void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus);
 Module_Status EXG_SignalProcessing(void);
 
 /* Create CLI commands --------------------------------------------------------*/
+portBASE_TYPE CLI_PlotToTerminalCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_ECG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_EOG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_EEG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
@@ -81,7 +84,15 @@ portBASE_TYPE CLI_EOG_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWrite
 portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE StreamEXGCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 
-
+/*-----------------------------------------------------------*/
+/* CLI command structure : PlotToTerminal */
+const CLI_Command_Definition_t CLI_PlotToTerminalCommandDefinition =
+{
+	( const int8_t * ) "plot", /* The command string to type. */
+	( const int8_t * ) "Plot:\r\nSending (normal sample) and (filtered sample) to draw signals for EMG,EEG,ECG,EOG.\r\n\r\n",
+	CLI_PlotToTerminalCommand, /* The function to run. */
+	2 /* zero parameters are expected. */
+};
 /*-----------------------------------------------------------*/
 /* CLI command structure : ECG_Sample */
 const CLI_Command_Definition_t CLI_ECG_SampleCommandDefinition =
@@ -495,7 +506,9 @@ void Module_Peripheral_Init(void){
 			index_dma[i - 1] = &(DMA1_Channel5->CNDTR);
 		}
 	}
-	 xTaskCreate(EXGTask,(const char* ) "EXGTask",configMINIMAL_STACK_SIZE,NULL,osPriorityNormal - osPriorityIdle,&EXGTaskHandle);
+//	 xTaskCreate(EXGTask,(const char* ) "EXGTask",configMINIMAL_STACK_SIZE,NULL,osPriorityNormal - osPriorityIdle,&EXGTaskHandle);
+
+	 xTaskCreate(EXGSignalProcessing,(const char* ) "EXGSignalProcessingTask",configMINIMAL_STACK_SIZE,NULL,osPriorityRealtime - osPriorityIdle,&EXGSignalProcessingHandle);
 
 }
 
@@ -618,6 +631,7 @@ uint8_t GetPort(UART_HandleTypeDef *huart){
 /* --- Register this module CLI Commands
  */
 void RegisterModuleCLICommands(void){
+	FreeRTOS_CLIRegisterCommand(&CLI_PlotToTerminalCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_ECG_SampleCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&StreamCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_EOG_SampleCommandDefinition);
@@ -666,7 +680,19 @@ void EXGTask(void *argument){
 
 
 /*-----------------------------------------------------------*/
+/* */
+void EXGSignalProcessing(void *argument) {
 
+    for(;;)
+    {
+        // Wait for ISR notification
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        // Process EXG Signal
+        EXG_SignalProcessing();
+    }
+
+}
 /* -----------------------------------------------------------------------
  |							 	Local  APIs			    		          | 																 	|
 /* -----------------------------------------------------------------------
@@ -1016,8 +1042,8 @@ Module_Status EXG_SignalProcessing(void)
 
 	CheckLeadsStatus(&leadsStatus);
 
-	if (leadsStatus == LEADP_CONNECTED_LEADN_CONNECTED)
-	{
+//	if (leadsStatus == LEADP_CONNECTED_LEADN_CONNECTED)
+//	{
 		exg.analogSample = (float)(exg.AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
 		inputSignal = exg.inputSignalType;
 
@@ -1053,9 +1079,9 @@ Module_Status EXG_SignalProcessing(void)
 			default:
 				status = H2BR0_ERR_WRONGPARAMS;
 		}
-	}
-	else
-		status = H2BR0_ERR_LEADS_NOTCONNECTED;
+//	}
+//	else
+//		status = H2BR0_ERR_LEADS_NOTCONNECTED;
 
 	return status;
 }
@@ -1066,9 +1092,16 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef* htim)
 
 	if(htim->Instance == EXG_TIM)
 	{
+	    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
 		SetSamplingFlag();
-		EXG_SignalProcessing();
+
+        vTaskNotifyGiveFromISR(EXGSignalProcessingHandle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+//		EXG_SignalProcessing();
 	}
+
 }
 
 /* -----------------------------------------------------------------------
@@ -1312,31 +1345,34 @@ Module_Status ECG_HeartRate(uint8_t *heartRate)
  * @param2: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
  * @retval: status
  */
-Module_Status PlotToTerminal(uint8_t port,InputSignal_EXG inputSignal)
-{
+Module_Status PlotToTerminal(uint8_t port)
+ {
 	uint8_t status = H2BR0_OK;
 	uint8_t samplingFlag;
-	char sendData[26];
-	if(port == 0)
-	return H2BR0_ERR_WRONGPARAMS;
+	char sendData[80] = {0};
 
-	if(exg.inputSignalType == ECG || exg.inputSignalType == EOG || exg.inputSignalType == EEG || exg.inputSignalType == EMG)
-	{
-		if(exg.inputSignalType == EMG)
-			sprintf(sendData, "a%5.2fb%5.2fc%5.2fd%5.2f\r\n",exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample, exg.EMGEnvelopeSample);
+	if (port == 0)
+		return H2BR0_ERR_WRONGPARAMS;
+
+//    uint32_t startTime = xTaskGetTickCount();
+//    TickType_t xLastWakeTime = startTime;
+
+//    while ((xTaskGetTickCount() - startTime) < pdMS_TO_TICKS(Timeout))
+//    {
+
+		if (exg.inputSignalType == EMG)
+			sprintf(sendData, "Analog:%5.2f | Filtered:%5.2f | Rectified:%5.2f | Envelope:%5.2f\r\n", exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample, exg.EMGEnvelopeSample);
 		else
-			sprintf(sendData, "a%5.2fb%5.2f\r\n", exg.analogSample, exg.filteredSample);
+			sprintf(sendData, "Analog:%5.2f | Filtered:%5.2f\r\n", exg.analogSample, exg.filteredSample);
 
 		GetSamplingFlag(&samplingFlag);
 
-		if (samplingFlag == 1)
-		{
+		if (samplingFlag == 1) {
 			ResetSamplingFlag();
-			writePxMutex(port, sendData,strlen(sendData), 100, 100);
+//			writePxMutex(port, sendData, strlen(sendData), cmd50ms, 20);
+			Send_BOS_Message(port, sendData, strlen(sendData), cmd50ms, 0);
 		}
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
+//	}
 
 	return status;
 }
@@ -1609,7 +1645,7 @@ Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,u
 
 	while(samples < Numofsamples)
 	{
-	status=PlotToTerminal(port,inputSignal);
+	status=PlotToTerminal(port);
 	vTaskDelay(pdMS_TO_TICKS(period));
 	samples++;
 	}
@@ -1745,6 +1781,9 @@ Module_Status StreamToCLI(uint32_t Numofsamples, uint32_t timeout,
    -----------------------------------------------------------------------
  */
 
+
+/*-----------------------------------------------------------*/
+
 portBASE_TYPE StreamEXGCommand(int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString)
 {
 	const char *const EMGCmdName = "emg";
@@ -1866,6 +1905,57 @@ static bool StreamCommandParser(const int8_t *pcCommandString, const char **ppSe
 
 	return true;
 }
+/*-----------------------------------------------------------*/
+
+portBASE_TYPE CLI_PlotToTerminalCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString )
+{
+	Module_Status result = H2BR0_OK;
+
+	const char *const EMGCmdName = "emg";
+	const char *const EEGCmdName = "eeg";
+	const char *const EOGCmdName = "eog";
+	const char *const ECGCmdName = "ecg";
+	const char *pTimeoutMSStr = NULL;
+	const char *pSignal = NULL;
+
+	portBASE_TYPE timeoutStrLen = 0;
+	portBASE_TYPE signalStrLen = 0;
+
+	uint32_t timeout = 0;
+
+	(void )xWriteBufferLen;
+	configASSERT(pcWriteBuffer);
+
+	// Make sure we return something
+	*pcWriteBuffer = '\0';
+
+
+	pSignal = (const char*) FreeRTOS_CLIGetParameter(pcCommandString, 1, &signalStrLen);
+	pTimeoutMSStr = (const char*) FreeRTOS_CLIGetParameter(pcCommandString, 2, &timeoutStrLen);
+
+	if (!strncmp(pSignal, EMGCmdName, strlen(EMGCmdName))) {
+		EXG_Init(EMG);
+	} else if (!strncmp(pSignal, EEGCmdName, strlen(EEGCmdName))) {
+		EXG_Init(EEG);
+	} else if (!strncmp(pSignal, ECGCmdName, strlen(ECGCmdName))) {
+		EXG_Init(ECG);
+	} else if (!strncmp(pSignal, EOGCmdName, strlen(EOGCmdName))) {
+		EXG_Init(EOG);
+	}
+
+	timeout = atoi(pTimeoutMSStr);
+
+	uint32_t startTime = xTaskGetTickCount();
+	TickType_t xLastWakeTime = startTime;
+
+	while ((xTaskGetTickCount() - startTime) < pdMS_TO_TICKS(timeout)) {
+		result = PlotToTerminal(PcPort);
+	}
+
+	return pdFALSE;
+
+}
+
 /*-----------------------------------------------------------*/
 
 portBASE_TYPE CLI_ECG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){

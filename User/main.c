@@ -26,11 +26,12 @@ int main(void){
 
 /* User Task */
 void UserTask(void *argument){
-
+	EXG_Init(EMG);
 	
 	// put your code here, to run repeatedly.
 	while(1){
-
+//		PlotToTerminal(P3);
+//		HAL_Delay(5000);
 	}
 }
 
