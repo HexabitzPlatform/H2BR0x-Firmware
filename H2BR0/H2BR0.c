@@ -89,7 +89,7 @@ portBASE_TYPE StreamEXGCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, c
 const CLI_Command_Definition_t CLI_PlotToTerminalCommandDefinition =
 {
 	( const int8_t * ) "plot", /* The command string to type. */
-	( const int8_t * ) "Plot:\r\nSending (normal sample) and (filtered sample) to draw signals for EMG,EEG,ECG,EOG.\r\n\r\n",
+	( const int8_t * ) "Plot:\r\nSending EMG,EEG,ECG,or EOG signals for a specific time in mSec.\r\n\r\n",
 	CLI_PlotToTerminalCommand, /* The function to run. */
 	2 /* zero parameters are expected. */
 };
@@ -1369,8 +1369,8 @@ Module_Status PlotToTerminal(uint8_t port)
 
 		if (samplingFlag == 1) {
 			ResetSamplingFlag();
-//			writePxMutex(port, sendData, strlen(sendData), cmd50ms, 20);
-			Send_BOS_Message(port, sendData, strlen(sendData), cmd50ms, 0);
+			writePxMutex(port, sendData, strlen(sendData), cmd50ms, 20);
+//			Send_BOS_Message(port, sendData, strlen(sendData), cmd50ms, 0);
 		}
 //	}
 
@@ -1585,18 +1585,18 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
  * @param5: timeout.
  * @retval: status
  */
-Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
-{
-	Module_Status status =H2BR0_OK;
-	tofMode = STREAM_TO_PORT;
-	port2 = port;
-	module2 = module;
-	Numofsamples2 = Numofsamples;
-	timeout2 = timeout;
-	mode2 = inputSignal;
-	return status;
-
-}
+//Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+//{
+//	Module_Status status =H2BR0_OK;
+//	tofMode = STREAM_TO_PORT;
+//	port2 = port;
+//	module2 = module;
+//	Numofsamples2 = Numofsamples;
+//	timeout2 = timeout;
+//	mode2 = inputSignal;
+//	return status;
+//
+//}
 /*-----------------------------------------------------------*/
 Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
 {
@@ -1620,17 +1620,17 @@ Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG in
 
 }
 /*-----------------------------------------------------------*/
-Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
-{
-	Module_Status status =H2BR0_OK;
-	tofMode = STREAM_TO_Terminal;
-	port1 = port;
-	Numofsamples1 = Numofsamples;
-	timeout1 = timeout;
-	mode1 = inputSignal;
-	return status;
-
-}
+//Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+//{
+//	Module_Status status =H2BR0_OK;
+//	tofMode = STREAM_TO_Terminal;
+//	port1 = port;
+//	Numofsamples1 = Numofsamples;
+//	timeout1 = timeout;
+//	mode1 = inputSignal;
+//	return status;
+//
+//}
 
 /*-----------------------------------------------------------*/
 Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
