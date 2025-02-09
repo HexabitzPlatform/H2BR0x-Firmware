@@ -71,7 +71,6 @@ void TIM_MSEC_Init(void){
 
 	HAL_TIM_Base_Start(&htim17);
 }
-
 /*-----------------------------------------------------------*/
 /* EXG special timer */
 void MX_TIM2_Init(void)
@@ -80,23 +79,31 @@ void MX_TIM2_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 48-1;
+  htim2.Init.Prescaler = 64-1; // Prescaler value: (Prescaler + 1) = 64
+  // Timer clock frequency = SYSCLK / (Prescaler + 1)
+  // Timer clock = 64MHz / 64 = 1MHz
+
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+
   htim2.Init.Period = 2000;
+  // Initial period value: 2000
+  // The actual period is defined by EXG_TIM_PERIOD later.
+
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+
   HAL_TIM_Base_Init(&htim2);
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  // Using the internal clock source (SYSCLK after prescaler)
+
   HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig);
 
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig);
-
-
-
 }
+
 
 void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* tim_baseHandle)
 {
