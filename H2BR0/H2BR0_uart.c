@@ -199,6 +199,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart){
 	    hdma_usart1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
 	    hdma_usart1_rx.Init.Mode = DMA_CIRCULAR;
 	    hdma_usart1_rx.Init.Priority = DMA_PRIORITY_LOW;
+
+
+		msgRxDMA[3] = &hdma_usart1_rx;
+
 	    HAL_DMA_Init(&hdma_usart1_rx);
 
 	    __HAL_LINKDMA(huart,hdmarx,hdma_usart1_rx);
@@ -248,6 +252,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart){
 	    hdma_usart2_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
 	    hdma_usart2_rx.Init.Mode = DMA_CIRCULAR;
 	    hdma_usart2_rx.Init.Priority = DMA_PRIORITY_LOW;
+
+
+		msgRxDMA[1] = &hdma_usart2_rx;
+
 	    HAL_DMA_Init(&hdma_usart2_rx);
 
 	    __HAL_LINKDMA(huart,hdmarx,hdma_usart2_rx);
@@ -297,6 +305,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart){
 	    hdma_usart3_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
 	    hdma_usart3_rx.Init.Mode = DMA_CIRCULAR;
 	    hdma_usart3_rx.Init.Priority = DMA_PRIORITY_LOW;
+
+
+		msgRxDMA[2] = &hdma_usart3_rx;
+
 	    HAL_DMA_Init(&hdma_usart3_rx);
 
 	    __HAL_LINKDMA(huart,hdmarx,hdma_usart3_rx);
@@ -368,6 +380,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart){
 	    hdma_usart5_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
 	    hdma_usart5_rx.Init.Mode = DMA_CIRCULAR;
 	    hdma_usart5_rx.Init.Priority = DMA_PRIORITY_LOW;
+
+
+		msgRxDMA[4] = &hdma_usart5_rx;
+
 	    HAL_DMA_Init(&hdma_usart5_rx);
 
 	    __HAL_LINKDMA(huart,hdmarx,hdma_usart5_rx);
@@ -411,6 +427,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart){
 	    hdma_usart6_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
 	    hdma_usart6_rx.Init.Mode = DMA_CIRCULAR;
 	    hdma_usart6_rx.Init.Priority = DMA_PRIORITY_LOW;
+
+
+		msgRxDMA[0] = &hdma_usart6_rx;
+
 	    HAL_DMA_Init(&hdma_usart6_rx);
 
 	    __HAL_LINKDMA(huart,hdmarx,hdma_usart6_rx);
@@ -494,22 +514,22 @@ HAL_StatusTypeDef writePxITMutex(uint8_t port,char *buffer,uint16_t n,uint32_t m
 
 /* --- Non-blocking (DMA-based) write protected with a semaphore --- 
  */
-HAL_StatusTypeDef writePxDMAMutex(uint8_t port,char *buffer,uint16_t n,uint32_t mutexTimeout){
-	HAL_StatusTypeDef result =HAL_ERROR;
-	UART_HandleTypeDef *hUart =GetUart(port);
-	
-	if(hUart != NULL){
-		/* Wait for the mutex to be available. */
-		if(osSemaphoreWait(PxTxSemaphoreHandle[port],mutexTimeout) == osOK){
-			/* Setup TX DMA on this port */
-			DMA_MSG_TX_Setup(hUart);
-			/* Transmit the message */
-			result =HAL_UART_Transmit_DMA(hUart,(uint8_t* )buffer,n);
-		}
-	}
-	
-	return result;
-}
+//HAL_StatusTypeDef writePxDMAMutex(uint8_t port,char *buffer,uint16_t n,uint32_t mutexTimeout){
+//	HAL_StatusTypeDef result =HAL_ERROR;
+//	UART_HandleTypeDef *hUart =GetUart(port);
+//
+//	if(hUart != NULL){
+//		/* Wait for the mutex to be available. */
+//		if(osSemaphoreWait(PxTxSemaphoreHandle[port],mutexTimeout) == osOK){
+//			/* Setup TX DMA on this port */
+//			DMA_MSG_TX_Setup(hUart);
+//			/* Transmit the message */
+//			result =HAL_UART_Transmit_DMA(hUart,(uint8_t* )buffer,n);
+//		}
+//	}
+//
+//	return result;
+//}
 
 /* --- Update baudrate for this port --- 
  */
