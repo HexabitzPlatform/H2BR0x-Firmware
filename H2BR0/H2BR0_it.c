@@ -319,24 +319,26 @@ void DMA1_Channel2_3_IRQHandler(void)
 
   /* USER CODE END DMA1_Channel2_3_IRQn 1 */
 }
-
 /**
   * @brief This function handles DMA1 Ch4 to Ch7, DMA2 Ch1 to Ch5 and DMAMUX1 Overrun Interrupts.
   */
 void DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 0 */
+ {
 
-  /* USER CODE END DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 0 */
-   if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF4) == SET)
-	   DMA_IRQHandler(P1);
-   else if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF5) == SET)
-	   DMA_IRQHandler(P5);
-   else if(HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF6) == SET)
-	   DMA_IRQHandler(P1);
-  /* USER CODE BEGIN DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 1 */
+	/* USER CODE BEGIN DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 0 */
 
-  /* USER CODE END DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 1 */
+	/* USER CODE END DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 0 */
+	if (HAL_DMA_GET_IT_SOURCE(DMA2,DMA_ISR_GIF1) == SET)
+		HAL_DMA_IRQHandler(&hdma_adc1);
+	else if (HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF4) == SET)
+		DMA_IRQHandler(P1);
+	else if (HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF5) == SET)
+		DMA_IRQHandler(P5);
+	else if (HAL_DMA_GET_IT_SOURCE(DMA1,DMA_ISR_GIF6) == SET)
+		DMA_IRQHandler(P1);
+	/* USER CODE BEGIN DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 1 */
+
+	/* USER CODE END DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn 1 */
 }
 /*-----------------------------------------------------------*/
 
@@ -514,17 +516,17 @@ void vApplicationMallocFailedHook(void){
 
 /**
   * @brief This function handles DMA1 channel 1 interrupt.
-  */
-void DMA2_Channel1_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc1);
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 1 */
-}
+//  */
+//void DMA2_Channel1_IRQHandler(void)
+//{
+//  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+//
+//  /* USER CODE END DMA1_Channel1_IRQn 0 */
+//  HAL_DMA_IRQHandler(&hdma_adc1);
+//  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+//
+//  /* USER CODE END DMA1_Channel1_IRQn 1 */
+//}
 
 /**
   * @brief This function handles TIM2 global interrupt.
