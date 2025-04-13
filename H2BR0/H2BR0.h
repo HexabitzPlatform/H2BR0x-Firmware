@@ -27,39 +27,34 @@
 #include "H2BR0_timers.h"
 #include "H2BR0_inputs.h"
 #include "H2BR0_eeprom.h"
+
 /* Exported definitions -------------------------------------------------------*/
+#define	MODULE_PN		_H2BR0
 
-#define	modulePN		_H2BR0
+/* Port-related Definitions */
+#define	NUM_OF_PORTS	6
+#define P_PROG 			P2		/* ST factory bootloader UART */
 
+/* Define Available Ports */
+#define _P1
+#define _P2
+#define _P3
+#define _P4
+#define _P5
 
-/* Port-related definitions */
-#define	NumOfPorts			5
+/* Define Available USARTs */
+#define _USART1
+#define _USART2
+#define _USART3
+#define _USART5
+#define _USART6
 
-#define P_PROG 				P2						/* ST factory bootloader UART */
-
-/* Define available ports */
-#define _P1 
-#define _P2 
-#define _P3 
-#define _P4 
-#define _P5 
-
-/* Define available USARTs */
-#define _Usart1 1
-#define _Usart2 1
-#define _Usart3 1
-#define _Usart5 1
-#define _Usart6	1
-
-
-/* Port-UART mapping */
-#define P1uart &huart6
-#define P2uart &huart2
-#define P3uart &huart3
-#define P4uart &huart1
-#define P5uart &huart5
-
-
+/* Port-UART Mapping */
+#define UART_P1 &huart6
+#define UART_P2 &huart2
+#define UART_P3 &huart3
+#define UART_P4 &huart1
+#define UART_P5 &huart5
 
 /* Port Definitions */
 #define	USART1_TX_PIN		GPIO_PIN_9
@@ -247,7 +242,7 @@ extern void ExecuteMonitor(void);
  */
 
 void SetupPortForRemoteBootloaderUpdate(uint8_t port);
-void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
+void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 
 Module_Status EXG_Init(InputSignal_EXG inputSignal);
 Module_Status ECG_Sample(float *sample, float *filteredSample);

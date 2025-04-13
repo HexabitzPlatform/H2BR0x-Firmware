@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.3.6 - Copyright (C) 2017-2024 Hexabitz
+ BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
 
  File Name     : H2BR0_adc.c
@@ -7,13 +7,16 @@
 
  */
 
-/* Includes ------------------------------------------------------------------*/
+/* Includes ****************************************************************/
 #include "H2BR0_adc.h"
 
+/* Exported Variables ******************************************************/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
-/* ADC1 init function */
+/***************************************************************************/
+/* Configure ADC ***********************************************************/
+/***************************************************************************/
 void MX_ADC1_Init(void)
 {
 
@@ -63,7 +66,7 @@ void MX_ADC1_Init(void)
 // HAL_ADC_ConfigChannel(&hadc1, &sConfig);
 }
 
-
+/***************************************************************************/
 void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
 {
 
@@ -72,8 +75,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
   {
     /* ADC1 clock enable */
     __HAL_RCC_ADC_CLK_ENABLE();
-
     __HAL_RCC_GPIOA_CLK_ENABLE();
+
     /**ADC1 GPIO Configuration
     PA4     ------> ADC1_IN4
     */
@@ -100,6 +103,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
   }
 }
 
+/***************************************************************************/
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 {
 
@@ -119,4 +123,5 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
   }
 }
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+/***************************************************************************/
+/***************** (C) COPYRIGHT HEXABITZ ***** END OF FILE ****************/
