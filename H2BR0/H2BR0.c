@@ -925,7 +925,7 @@ static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, Sa
 	int8_t *pcOutputString = NULL;
 	uint32_t period = timeout / Numofsamples;
 	if (period < MIN_MEMS_PERIOD_MS)
-		return H2BR0_ERR_WrongParams;
+		return H2BR0_ERR_WRONGPARAMS;
 
 	// TODO: Check if CLI is enable or not
 	for (uint8_t chr = 0; chr < MSG_RX_BUF_SIZE; chr++) {
@@ -1708,7 +1708,7 @@ Module_Status SampletoPort(uint8_t module, uint8_t port,
 	Module_Status status = H2BR0_OK;
 
 	if (port == 0 && module == myID) {
-		return H2BR0_ERR_WrongParams;
+		return H2BR0_ERR_WRONGPARAMS;
 	}
 	switch (inputSignal) {
 	case ECG:

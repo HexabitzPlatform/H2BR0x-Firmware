@@ -107,7 +107,6 @@
 #define _IND_LED_PORT			GPIOB
 #define _IND_LED_PIN			GPIO_PIN_7
 
-
 /* Module-specific Macro Definitions ***************************************/
 #define ADC_VREF                        3.3  //Volt
 #define ADC_NUM_OF_STATES               4095
@@ -144,11 +143,10 @@
 /* Module-status Type Definition */
 typedef enum {
 	H2BR0_OK =0,
-	H2BR0_ERR_UNKNOWNMESSAGE,
-	H2BR0_ERR_WRONGPARAMS,
 	H2BR0_ERR_LEADS_NOTCONNECTED,
 	H2BR0_ERR_TERMINATED,
-	H2BR0_ERR_WrongParams,
+	H2BR0_ERR_WRONGPARAMS,
+	H2BR0_ERR_UNKNOWNMESSAGE,
 	H2BR0_ERROR =255
 } Module_Status;
 
@@ -178,41 +176,46 @@ typedef enum{
 }EyeBlinkingStatus;
 
 typedef struct{
-	StatusType_EXG	EXGStatus;
-	LeadsStatus_EXG statusOfLeads;
-	InputSignal_EXG inputSignalType;
+	uint8_t heartRate;
+	uint8_t samplingFlag;
+	uint8_t heartRateLock;
+	uint8_t heartRateIndex;
+	uint8_t windowBufferIndex;
+	uint8_t EMGPulseDetectionFlag;
+	uint8_t EMGPulseDetectionLock;
+	uint8_t eyeBlinkDetectionFlag;
+	uint8_t EOGPositivePulseDetectionFlag;
+	uint8_t EOGNegativePulseDetectionFlag;
+	uint8_t EOGPositivePulseDetectionLock;
+	uint8_t EOGNegativePulseDetectionLock;
+
+	uint16_t previousHeartRate;
+	uint16_t EMGPulseDurationMsec;
+	uint16_t EOGPositivePulseDetectionTick;
+	uint16_t EOGNegativePulseDetectionTick;
+
+	uint32_t EMGPulseRisingEdgeTick;
 	uint32_t AdcValue;
 	uint32_t sampleCounter;
-	uint8_t  samplingFlag;
+	uint32_t HRCalculationLastTick;
+
 	float analogSample;
 	float filteredSample;
+	float EMGEnvelopeSample;
+	float EMGRectifiedSample;
 	float tempFilterInputBuffer[5];
 	float tempFilterOutputBuffer[5];
 	float ECGBaselineFilteredSample;
-	uint32_t HRCalculationLastTick;
-	uint8_t heartRate;
-	float heartRateArray[HEART_RATE_ARRAY_SIZE];
-	uint8_t  heartRateIndex;
-	uint8_t  heartRateLock;
-	uint16_t previousHeartRate;
-	float EMGRectifiedSample;
-	float EMGEnvelopeSample;
-	float movingWindowBuffer [EMG_MOVING_WINDOW];
-	uint8_t windowBufferIndex;
 	float sumOfSamplesValuesInWindow;
-	uint8_t EMGPulseDetectionFlag;
 	float EMGPulseDetectionThreshold;
-	uint16_t EMGPulseDurationMsec;
-	uint32_t EMGPulseRisingEdgeTick;
-	uint8_t  EMGPulseDetectionLock;
+	float movingWindowBuffer [EMG_MOVING_WINDOW];
+	float heartRateArray[HEART_RATE_ARRAY_SIZE];
+
+	StatusType_EXG	EXGStatus;
+	LeadsStatus_EXG statusOfLeads;
+	InputSignal_EXG inputSignalType;
 	EyeBlinkingStatus eyeBlinkStatus;
-	uint8_t  eyeBlinkDetectionFlag;
-	uint16_t EOGPositivePulseDetectionTick;
-	uint16_t EOGNegativePulseDetectionTick;
-	uint8_t  EOGPositivePulseDetectionFlag;
-	uint8_t  EOGNegativePulseDetectionFlag;
-	uint8_t  EOGPositivePulseDetectionLock;
-	uint8_t  EOGNegativePulseDetectionLock;
+
 }EXG_t;
 
 /* Exported UART variables */
