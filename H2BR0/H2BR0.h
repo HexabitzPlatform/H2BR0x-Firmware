@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.3.6 - Copyright (C) 2017-2024 Hexabitz
+ BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
  
  File Name     : H2BR0.h
@@ -13,22 +13,21 @@
 
  */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
+/* Define to prevent recursive inclusion ***********************************/
 #ifndef H2BR0_H
 #define H2BR0_H
 
-/* Includes ------------------------------------------------------------------*/
+/* Includes ****************************************************************/
 #include "BOS.h"
 #include "H2BR0_MemoryMap.h"
 #include "H2BR0_uart.h"
 #include "H2BR0_gpio.h"
 #include "H2BR0_dma.h"
 #include "H2BR0_adc.h"
-#include "H2BR0_timers.h"
 #include "H2BR0_inputs.h"
 #include "H2BR0_eeprom.h"
 
-/* Exported definitions -------------------------------------------------------*/
+/* Exported Macros *********************************************************/
 #define	MODULE_PN		_H2BR0
 
 /* Port-related Definitions */
@@ -56,6 +55,7 @@
 #define UART_P4 &huart1
 #define UART_P5 &huart5
 
+/* Module-specific Hardware Definitions ************************************/
 /* Port Definitions */
 #define	USART1_TX_PIN		GPIO_PIN_9
 #define	USART1_RX_PIN		GPIO_PIN_10
@@ -87,16 +87,7 @@
 #define	USART6_RX_PORT		GPIOB
 #define	USART6_AF			GPIO_AF8_USART6
 
-
-/* Module-specific Definitions */
-
-/* Indicator LED */
-#define _IND_LED_PORT			GPIOB
-#define _IND_LED_PIN			GPIO_PIN_7
-
-#define NUM_MODULE_PARAMS		1
-
-/* EXG Module GPIO Pinout */
+/* Module-specific Hardware Definitions */
 #define SDN_EXG_Pin             GPIO_PIN_6
 #define SDN_EXG_GPIO_Port       GPIOA
 #define LODP_EXG_Pin            GPIO_PIN_7
@@ -112,13 +103,19 @@
 /* EXG Module Special ADC */
 #define HANDLER_ADC_EXG         hadc1
 
-/* EXG Module special parameters */
+/* Indicator LED */
+#define _IND_LED_PORT			GPIOB
+#define _IND_LED_PIN			GPIO_PIN_7
+
+
+/* Module-specific Macro Definitions ***************************************/
 #define ADC_VREF                        3.3  //Volt
 #define ADC_NUM_OF_STATES               4095
 #define ECG_SAMPLE_TIME                 8333 //  micro sec	fs=120sps
 #define EOG_SAMPLE_TIME                 10000 // micro sec	fs=100sps
 #define EEG_SAMPLE_TIME                 10000 // micro sec fs=100sps
 #define EMG_SAMPLE_TIME                 2000 //  micro sec fs=500sps
+
 #define HEART_RATE_MIN                  40    // bpm
 #define HEART_RATE_MAX                  120   // bpm
 #define HEART_RATE_ARRAY_SIZE           5
@@ -137,14 +134,14 @@
 #define MIN_MEMS_PERIOD_MS				100
 #define MAX_MEMS_TIMEOUT_MS				0xFFFFFFFF
 
-#define STREAM_TO_PORT          1
-#define STREAM_TO_Terminal      2
+#define STREAM_TO_PORT                  1
+#define STREAM_TO_Terminal              2
+#define MIN_PERIOD_MS			    	100
 
-/* Module EEPROM Variables */
-// Module Addressing Space 500 - 599
-#define _EE_MODULE							500		
+#define NUM_MODULE_PARAMS		        1
 
-/* EXG Module_Status Type Definition */
+/* Module-specific Type Definition *****************************************/
+/* Module-status Type Definition */
 typedef enum {
 	H2BR0_OK =0,
 	H2BR0_ERR_UNKNOWNMESSAGE,
@@ -218,9 +215,7 @@ typedef struct{
 	uint8_t  EOGNegativePulseDetectionLock;
 }EXG_t;
 
-/* Export Module typedef structure */
-
-/* Export UART variables */
+/* Exported UART variables */
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
@@ -234,16 +229,10 @@ extern void MX_USART3_UART_Init(void);
 extern void MX_USART5_UART_Init(void);
 extern void MX_USART6_UART_Init(void);
 extern void SystemClock_Config(void);
-extern void ExecuteMonitor(void);
 
-/* -----------------------------------------------------------------------
- |								  APIs							          ||
-/* -----------------------------------------------------------------------
- */
-
-void SetupPortForRemoteBootloaderUpdate(uint8_t port);
-void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
-
+/***************************************************************************/
+/***************************** General Functions ***************************/
+/***************************************************************************/
 Module_Status EXG_Init(InputSignal_EXG inputSignal);
 Module_Status ECG_Sample(float *sample, float *filteredSample);
 Module_Status EOG_Sample(float *sample, float *filteredSample);
@@ -256,15 +245,12 @@ Module_Status EOG_CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus);
 Module_Status PlotToTerminal(uint8_t port);
 Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal);
-//Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
-//Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 
-/* -----------------------------------------------------------------------
- |								Commands							      ||
-/* -----------------------------------------------------------------------
- */
-
+void SetupPortForRemoteBootloaderUpdate(uint8_t port);
+void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 
 #endif /* H2BR0_H */
 
-/************************ (C) COPYRIGHT HEXABITZ *****END OF FILE****/
+/***************** (C) COPYRIGHT HEXABITZ ***** END OF FILE ****************/
