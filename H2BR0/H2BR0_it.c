@@ -18,6 +18,9 @@ extern uint8_t WakeupFromStopFlag;
 extern uint8_t UARTRxBuf[NUM_OF_PORTS][MSG_RX_BUF_SIZE];
 extern TaskHandle_t xCommandConsoleTaskHandle; /* CLI Task handler */
 
+extern TIM_HandleTypeDef htim2;
+extern DMA_HandleTypeDef hdma_adc1;
+
 /* Local Variables *********************************************************/
 uint16_t PacketLength =0;
 uint8_t Count =0;
@@ -68,6 +71,13 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart,uint16_t Size){
 		vTaskNotifyGiveFromISR(BackEndTaskHandle,&xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
+}
+
+/***************************************************************************/
+void TIM2_IRQHandler(void) {
+
+	HAL_TIM_IRQHandler(&htim2);
+
 }
 
 /***************************************************************************/
@@ -218,6 +228,8 @@ void DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQHandler(void) {
 		DMA_IRQHandler(GetPort(&huart6));
 #endif
 
+	if (HAL_DMA_GET_IT_SOURCE(DMA2,DMA_ISR_GIF1) == SET)
+		HAL_DMA_IRQHandler(&hdma_adc1);
 }
 
 /***************************************************************************/

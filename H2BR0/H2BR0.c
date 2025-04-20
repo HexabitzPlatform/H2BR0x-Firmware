@@ -1033,13 +1033,13 @@ void EXGSignalProcessing(void *argument) {
 
 /***************************************************************************/
 void EXG_Enable() {
-	HAL_GPIO_WritePin(SDN_EXG_GPIO_Port, SDN_EXG_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SDN_EXG_GPIO_PORT, SDN_EXG_PIN, GPIO_PIN_SET);
 	exg.EXGStatus = EXG_ENABLED;
 }
 
 /***************************************************************************/
 void EXG_Disable() {
-	HAL_GPIO_WritePin(SDN_EXG_GPIO_Port, SDN_EXG_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SDN_EXG_GPIO_PORT, SDN_EXG_PIN, GPIO_PIN_RESET);
 	exg.EXGStatus = EXG_DISABLED;
 }
 
@@ -1070,8 +1070,8 @@ void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus) {
 	GPIO_PinState LODPStatus;
 	GPIO_PinState LODNStatus;
 
-	LODPStatus = HAL_GPIO_ReadPin(LODP_EXG_GPIO_Port, LODP_EXG_Pin);
-	LODNStatus = HAL_GPIO_ReadPin(LODN_EXG_GPIO_Port, LODN_EXG_Pin);
+	LODPStatus = HAL_GPIO_ReadPin(LODP_EXG_GPIO_PORT, LODP_EXG_PIN);
+	LODNStatus = HAL_GPIO_ReadPin(LODN_EXG_GPIO_PORT, LODN_EXG_PIN);
 
 	if (LODPStatus == GPIO_PIN_RESET && LODNStatus == GPIO_PIN_RESET)
 		*leadsStatus = LEADP_CONNECTED_LEADN_CONNECTED;

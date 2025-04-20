@@ -87,13 +87,16 @@
 #define	USART6_RX_PORT		GPIOB
 #define	USART6_AF			GPIO_AF8_USART6
 
-/* Module-specific Hardware Definitions */
-#define SDN_EXG_Pin             GPIO_PIN_6
-#define SDN_EXG_GPIO_Port       GPIOA
-#define LODP_EXG_Pin            GPIO_PIN_7
-#define LODP_EXG_GPIO_Port      GPIOA
-#define LODN_EXG_Pin            GPIO_PIN_0
-#define LODN_EXG_GPIO_Port      GPIOB
+/* Module-specific Hardware Definitions ************************************/
+#define SDN_EXG_PIN             GPIO_PIN_6
+#define SDN_EXG_GPIO_PORT       GPIOA
+#define LODP_EXG_PIN            GPIO_PIN_7
+#define LODP_EXG_GPIO_PORT      GPIOA
+#define LODN_EXG_PIN            GPIO_PIN_0
+#define LODN_EXG_GPIO_PORT      GPIOB
+
+#define ADC_INPUT_PIN           GPIO_PIN_4
+#define ADC_INPUT_GPIO_PORT     GPIOA
 
 /* EXG Module Special Timer */
 #define EXG_TIM                 TIM2
