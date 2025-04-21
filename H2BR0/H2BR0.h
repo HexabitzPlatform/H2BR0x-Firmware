@@ -87,7 +87,7 @@
 #define	USART6_RX_PORT		GPIOB
 #define	USART6_AF			GPIO_AF8_USART6
 
-/* Module-specific Hardware Definitions ************************************/
+/* GPIO Pin Definition */
 #define SDN_EXG_PIN             GPIO_PIN_6
 #define SDN_EXG_GPIO_PORT       GPIOA
 #define LODP_EXG_PIN            GPIO_PIN_7
@@ -95,16 +95,16 @@
 #define LODN_EXG_PIN            GPIO_PIN_0
 #define LODN_EXG_GPIO_PORT      GPIOB
 
+/* ADC Pin Definition */
 #define ADC_INPUT_PIN           GPIO_PIN_4
 #define ADC_INPUT_GPIO_PORT     GPIOA
 
-/* EXG Module Special Timer */
+#define HANDLER_ADC_EXG         hadc1
+
+/* Timer Definition */
 #define EXG_TIM                 TIM2
 #define EXG_TIM_PERIOD          TIM2->ARR
 #define HANDLER_Timer_EXG       htim2
-
-/* EXG Module Special ADC */
-#define HANDLER_ADC_EXG         hadc1
 
 /* Indicator LED */
 #define _IND_LED_PORT			GPIOB
@@ -253,9 +253,6 @@ Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal);
 Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
-
-void SetupPortForRemoteBootloaderUpdate(uint8_t port);
-void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 
 #endif /* H2BR0_H */
 

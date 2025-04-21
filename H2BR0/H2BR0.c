@@ -47,6 +47,8 @@ ModuleParam_t ModuleParam[NUM_MODULE_PARAMS] = { 0 };
 /* Private Function Prototypes *********************************************/
 void MX_TIM2_Init(void);
 void Module_Peripheral_Init(void);
+void SetupPortForRemoteBootloaderUpdate(uint8_t port);
+void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
 uint8_t ClearROtopology(void);
 Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src, uint8_t dst, uint8_t shift);
 
