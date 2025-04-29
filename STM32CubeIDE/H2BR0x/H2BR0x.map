@@ -6654,13 +6654,13 @@ LOAD C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
  .igot.plt      0x20000974        0x0 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/thumb/v6-m/nofp/crtbegin.o
                 0x20000974                        . = ALIGN (0x4)
 
-.bss            0x20000978    0x190f0 load address 0x08030c88
+.bss            0x20000978    0x18eb8 load address 0x08030c88
                 0x20000978                        _sbss = .
                 0x20000978                        __bss_start__ = _sbss
  *(.bss)
  .bss           0x20000978       0x1c C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/thumb/v6-m/nofp/crtbegin.o
  *fill*         0x20000994        0x4 
- .bss           0x20000998      0x9cc BOS\BOS.o
+ .bss           0x20000998      0x984 BOS\BOS.o
                 0x200009e8                ACKMessageFlag
                 0x200009e9                RejectedMessageFlag
                 0x200009ea                AddBcastPayload
@@ -6676,231 +6676,231 @@ LOAD C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
                 0x20000a90                MessageLength
                 0x20000a98                PortStatus
                 0x20000aa0                cMessage
-                0x20000bf0                MessageParams
-                0x20000c20                StreamBuffer
-                0x20000e20                Neighbors
-                0x20000e38                Neighbors2
-                0x20000e50                bcastRoutes
-                0x20000e84                bosVarRegister
-                0x20000efc                dmaIndex
-                0x20000f18                RemoteBuffer
-                0x20000f20                RequestFormat
-                0x20000f24                Array
-                0x20001160                RouteDist
-                0x2000117c                RoutePrev
-                0x20001198                ModuleAlias
-                0x200012a8                BroadcastResponse
-                0x200012c4                GroupModules
-                0x200012f8                ArrayPortsDir
-                0x2000132c                myID
-                0x20001330                BOS
-                0x2000134c                OptionByte
-                0x2000134d                ResponseStatus
-                0x20001350                UserOptionByte
-                0x20001351                ExtraPcPort
-                0x20001352                cliLowBaudrateFlag
- .bss           0x20001364      0x1b8 BOS\BOS_CLI.o
-                0x200013b4                pcWelcomePortMessage
-                0x200013dc                TimedoutMsg
-                0x200013e0                Snippets
- .bss           0x2000151c       0xe2 BOS\BOS_CLIcommands.o
- *fill*         0x200015fe        0x2 
- .bss           0x20001600      0x51e BOS\BOS_dma.o
-                0x20001650                UARTRxBuf
-                0x20001ad0                dmaStreamDst
-                0x20001ae8                dmaStreamCount
-                0x20001b00                dmaStreamTotal
-                0x20001b18                MsgDMAStopped
- *fill*         0x20001b1e        0x2 
- .bss           0x20001b20       0xb4 BOS\BOS_freertos.o
-                0x20001b70                WakeupFromStopFlag
-                0x20001b78                P1MsgTaskHandle
-                0x20001b7c                P2MsgTaskHandle
-                0x20001b80                P3MsgTaskHandle
-                0x20001b84                P4MsgTaskHandle
-                0x20001b88                P5MsgTaskHandle
-                0x20001b8c                DefaultTaskHandle
-                0x20001b90                UserTaskHandle
-                0x20001b94                BackEndTaskHandle
-                0x20001b98                xCommandConsoleTaskHandle
-                0x20001b9c                PxRxSemaphoreHandle
-                0x20001bb8                PxTxSemaphoreHandle
- .bss           0x20001bd4       0xcd BOS\BOS_messaging.o
-                0x20001c24                crcBuffer
-                0x20001c5c                dmaDstPort
-                0x20001c68                dmaStreamPort
-                0x20001c6c                RemoteResponseFlag
-                0x20001c6d                NumOfElement
-                0x20001c70                RemoteResponseBuffer
-                0x20001c80                Route
- *fill*         0x20001ca1        0x3 
- .bss           0x20001ca4      0x8fa BOS\BOS_msgparser.o
-                0x20001cf4                crcCalculateBuffer
-                0x20001d2c                cliFirstTimeActivation
-                0x20001d30                MessageIndexStart
-                0x20001d38                MessageIndexEnd
-                0x20001d40                MessageBuffer
-                0x200023d0                ProcessMessageBuffer
-                0x200023d5                ProcessMessageIndexStart
-                0x200023d6                ProcessMessageIndexEnd
-                0x200023d7                bcastLastID
-                0x200023d8                IndexProcess
-                0x200023e0                IndexInput
-                0x200023e6                cliData
-                0x200023e7                dmaPortIndex
-                0x200023e8                AcceptedMessages
-                0x200023ea                RejectedMessages
-                0x200023ec                MessageCounter
-                0x200023ee                PortSelect
-                0x200023ef                PinSelect
-                0x200023f0                adcPort
-                0x200023f2                adcSide
-                0x200023f4                adcValue
-                0x200023f8                adcPercentage
-                0x200023fc                InternalTemperature
-                0x20002400                InternalVoltageReferance
-                0x20002404                EthernetDefaultSetting
-                0x20002424                RemoteDataBuffer
- *fill*         0x2000259e        0x2 
- .bss           0x200025a0      0x62c H2BR0\H2BR0.o
-                0x200025f0                huart1
-                0x20002684                huart2
-                0x20002718                huart3
-                0x200027ac                huart5
-                0x20002840                huart6
-                0x200028d4                htim2
-                0x20002920                EXGTaskHandle
-                0x20002924                EXGSignalProcessingHandle
-                0x20002928                exg
-                0x20002b89                port1
-                0x20002b8a                module1
-                0x20002b8b                mode1
-                0x20002b8c                port2
-                0x20002b8d                module2
-                0x20002b8e                mode2
-                0x20002b90                Numofsamples1
-                0x20002b94                timeout1
-                0x20002b98                Numofsamples2
-                0x20002b9c                timeout2
-                0x20002ba0                flag
-                0x20002ba1                tofMode
-                0x20002ba4                ModuleParam
-                0x20002bb0                end_time
-                0x20002bb4                start_time
-                0x20002bb8                Loop_time
- .bss           0x20002bcc      0x114 H2BR0\H2BR0_adc.o
-                0x20002c1c                hadc1
-                0x20002c80                hdma_adc1
- .bss           0x20002ce0       0x8c H2BR0\H2BR0_dma.o
-                0x20002d30                UARTDMAHandler
-                0x20002d48                hcrc
- .bss           0x20002d6c      0x139 H2BR0\H2BR0_inputs.o
-                0x20002dbc                DelayButtonStateReset
-                0x20002dbd                NeedToDelayButtonStateReset
-                0x20002dc0                dblCounter
-                0x20002dc8                PressCounter
-                0x20002de4                ReleaseCounter
-                0x20002e00                Button
-                0x20002e18                adcSelectFlag
-                0x20002e1a                adcEnableFlag
-                0x20002e1b                adcChannelRank
-                0x20002e1c                Channel
-                0x20002e20                adcChannelValue
-                0x20002e28                adcValueTemp
-                0x20002e2a                adcValueVref
-                0x20002e2c                Percentage
-                0x20002e30                Current
-                0x20002e34                hadc
-                0x20002e98                sConfig
- *fill*         0x20002ea5        0x3 
- .bss           0x20002ea8       0x53 H2BR0\H2BR0_it.o
-                0x20002ef8                PacketLength
-                0x20002efa                Count
- *fill*         0x20002efb        0x1 
- .bss           0x20002efc       0x80 H2BR0\H2BR0_rtc.o
-                0x20002f4c                BootStatus
-                0x20002f50                RtcHandle
- .bss           0x20002f7c       0xf8 H2BR0\H2BR0_timers.o
-                0x20002fcc                htim16
-                0x20003018                htim17
-                0x20003064                hiwdg
- .bss           0x20003074      0x290 H2BR0\H2BR0_uart.o
-                0x200030c4                hdma_usart1_rx
-                0x20003124                hdma_usart2_rx
-                0x20003184                hdma_usart3_rx
-                0x200031e4                hdma_usart4_rx
-                0x20003244                hdma_usart5_rx
-                0x200032a4                hdma_usart6_rx
- .bss           0x20003304        0x9 Thirdparty\EEPROM_Emul\Core\eeprom_emul.o
-                0x20003304                uhNbWrittenElements
-                0x20003306                ubCurrentActivePage
-                0x20003308                AddressRead
-                0x2000330c                CleanupPhase
- *fill*         0x2000330d        0x3 
- .bss           0x20003310      0x2c5 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\FreeRTOS_CLI.o
- *fill*         0x200035d5        0x3 
- .bss           0x200035d8    0x15fb0 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\portable\MemMang\heap_4.o
- .bss           0x20019588       0x40 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\queue.o
-                0x20019588                xQueueRegistry
- .bss           0x200195c8      0x134 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\tasks.o
-                0x200195c8                pxCurrentTCB
- .bss           0x200196fc       0x3c Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\timers.o
- .bss           0x20019738        0x4 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal.o
-                0x20019738                uwTick
- .bss           0x2001973c       0x1c Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_flash.o
-                0x2001973c                pFlash
+                0x20000bb8                MessageParams
+                0x20000be8                StreamBuffer
+                0x20000de8                Neighbors
+                0x20000dfc                Neighbors2
+                0x20000e10                bcastRoutes
+                0x20000e44                bosVarRegister
+                0x20000ebc                dmaIndex
+                0x20000ed0                RemoteBuffer
+                0x20000ed8                RequestFormat
+                0x20000edc                Array
+                0x20001118                RouteDist
+                0x20001134                RoutePrev
+                0x20001150                ModuleAlias
+                0x20001260                BroadcastResponse
+                0x2000127c                GroupModules
+                0x200012b0                ArrayPortsDir
+                0x200012e4                myID
+                0x200012e8                BOS
+                0x20001304                OptionByte
+                0x20001305                ResponseStatus
+                0x20001308                UserOptionByte
+                0x20001309                ExtraPcPort
+                0x2000130a                cliLowBaudrateFlag
+ .bss           0x2000131c      0x1b8 BOS\BOS_CLI.o
+                0x2000136c                pcWelcomePortMessage
+                0x20001394                TimedoutMsg
+                0x20001398                Snippets
+ .bss           0x200014d4       0xe2 BOS\BOS_CLIcommands.o
+ *fill*         0x200015b6        0x2 
+ .bss           0x200015b8      0x451 BOS\BOS_dma.o
+                0x20001608                UARTRxBuf
+                0x200019c8                dmaStreamDst
+                0x200019dc                dmaStreamCount
+                0x200019f0                dmaStreamTotal
+                0x20001a04                MsgDMAStopped
+ *fill*         0x20001a09        0x3 
+ .bss           0x20001a0c       0xb4 BOS\BOS_freertos.o
+                0x20001a5c                WakeupFromStopFlag
+                0x20001a64                P1MsgTaskHandle
+                0x20001a68                P2MsgTaskHandle
+                0x20001a6c                P3MsgTaskHandle
+                0x20001a70                P4MsgTaskHandle
+                0x20001a74                P5MsgTaskHandle
+                0x20001a78                DefaultTaskHandle
+                0x20001a7c                UserTaskHandle
+                0x20001a80                BackEndTaskHandle
+                0x20001a84                xCommandConsoleTaskHandle
+                0x20001a88                PxRxSemaphoreHandle
+                0x20001aa4                PxTxSemaphoreHandle
+ .bss           0x20001ac0       0xcd BOS\BOS_messaging.o
+                0x20001b10                crcBuffer
+                0x20001b48                dmaDstPort
+                0x20001b54                dmaStreamPort
+                0x20001b58                RemoteResponseFlag
+                0x20001b59                NumOfElement
+                0x20001b5c                RemoteResponseBuffer
+                0x20001b6c                Route
+ *fill*         0x20001b8d        0x3 
+ .bss           0x20001b90      0x7e2 BOS\BOS_msgparser.o
+                0x20001be0                crcCalculateBuffer
+                0x20001c18                cliFirstTimeActivation
+                0x20001c1c                MessageIndexStart
+                0x20001c24                MessageIndexEnd
+                0x20001c2c                MessageBuffer
+                0x200021a4                ProcessMessageBuffer
+                0x200021a9                ProcessMessageIndexStart
+                0x200021aa                ProcessMessageIndexEnd
+                0x200021ab                bcastLastID
+                0x200021ac                IndexProcess
+                0x200021b4                IndexInput
+                0x200021b9                cliData
+                0x200021ba                dmaPortIndex
+                0x200021bc                AcceptedMessages
+                0x200021be                RejectedMessages
+                0x200021c0                MessageCounter
+                0x200021c2                PortSelect
+                0x200021c3                PinSelect
+                0x200021c4                adcPort
+                0x200021c6                adcSide
+                0x200021c8                adcValue
+                0x200021cc                adcPercentage
+                0x200021d0                InternalTemperature
+                0x200021d4                InternalVoltageReferance
+                0x200021d8                EthernetDefaultSetting
+                0x200021f8                RemoteDataBuffer
+ *fill*         0x20002372        0x2 
+ .bss           0x20002374      0x62c H2BR0\H2BR0.o
+                0x200023c4                huart1
+                0x20002458                huart2
+                0x200024ec                huart3
+                0x20002580                huart5
+                0x20002614                huart6
+                0x200026a8                htim2
+                0x200026f4                EXGTaskHandle
+                0x200026f8                EXGSignalProcessingHandle
+                0x200026fc                exg
+                0x2000295d                port1
+                0x2000295e                module1
+                0x2000295f                mode1
+                0x20002960                port2
+                0x20002961                module2
+                0x20002962                mode2
+                0x20002964                Numofsamples1
+                0x20002968                timeout1
+                0x2000296c                Numofsamples2
+                0x20002970                timeout2
+                0x20002974                flag
+                0x20002975                tofMode
+                0x20002978                ModuleParam
+                0x20002984                end_time
+                0x20002988                start_time
+                0x2000298c                Loop_time
+ .bss           0x200029a0      0x114 H2BR0\H2BR0_adc.o
+                0x200029f0                hadc1
+                0x20002a54                hdma_adc1
+ .bss           0x20002ab4       0x8c H2BR0\H2BR0_dma.o
+                0x20002b04                UARTDMAHandler
+                0x20002b1c                hcrc
+ .bss           0x20002b40      0x12d H2BR0\H2BR0_inputs.o
+                0x20002b90                DelayButtonStateReset
+                0x20002b91                NeedToDelayButtonStateReset
+                0x20002b94                dblCounter
+                0x20002b9c                PressCounter
+                0x20002bb4                ReleaseCounter
+                0x20002bcc                Button
+                0x20002be0                adcSelectFlag
+                0x20002be2                adcEnableFlag
+                0x20002be3                adcChannelRank
+                0x20002be4                Channel
+                0x20002be8                adcChannelValue
+                0x20002bf0                adcValueTemp
+                0x20002bf2                adcValueVref
+                0x20002bf4                Percentage
+                0x20002bf8                Current
+                0x20002bfc                hadc
+                0x20002c60                sConfig
+ *fill*         0x20002c6d        0x3 
+ .bss           0x20002c70       0x53 H2BR0\H2BR0_it.o
+                0x20002cc0                PacketLength
+                0x20002cc2                Count
+ *fill*         0x20002cc3        0x1 
+ .bss           0x20002cc4       0x80 H2BR0\H2BR0_rtc.o
+                0x20002d14                BootStatus
+                0x20002d18                RtcHandle
+ .bss           0x20002d44       0xf8 H2BR0\H2BR0_timers.o
+                0x20002d94                htim16
+                0x20002de0                htim17
+                0x20002e2c                hiwdg
+ .bss           0x20002e3c      0x290 H2BR0\H2BR0_uart.o
+                0x20002e8c                hdma_usart1_rx
+                0x20002eec                hdma_usart2_rx
+                0x20002f4c                hdma_usart3_rx
+                0x20002fac                hdma_usart4_rx
+                0x2000300c                hdma_usart5_rx
+                0x2000306c                hdma_usart6_rx
+ .bss           0x200030cc        0x9 Thirdparty\EEPROM_Emul\Core\eeprom_emul.o
+                0x200030cc                uhNbWrittenElements
+                0x200030ce                ubCurrentActivePage
+                0x200030d0                AddressRead
+                0x200030d4                CleanupPhase
+ *fill*         0x200030d5        0x3 
+ .bss           0x200030d8      0x2c5 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\FreeRTOS_CLI.o
+ *fill*         0x2000339d        0x3 
+ .bss           0x200033a0    0x15fb0 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\portable\MemMang\heap_4.o
+ .bss           0x20019350       0x40 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\queue.o
+                0x20019350                xQueueRegistry
+ .bss           0x20019390      0x134 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\tasks.o
+                0x20019390                pxCurrentTCB
+ .bss           0x200194c4       0x3c Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\timers.o
+ .bss           0x20019500        0x4 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal.o
+                0x20019500                uwTick
+ .bss           0x20019504       0x1c Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_flash.o
+                0x20019504                pFlash
  *(.bss*)
  .bss.__malloc_current_mallinfo
-                0x20019758       0x28 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
-                0x20019758                __malloc_current_mallinfo
+                0x20019520       0x28 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
+                0x20019520                __malloc_current_mallinfo
  .bss.__malloc_max_total_mem
-                0x20019780        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
-                0x20019780                __malloc_max_total_mem
+                0x20019548        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
+                0x20019548                __malloc_max_total_mem
  .bss.__malloc_max_sbrked_mem
-                0x20019784        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
-                0x20019784                __malloc_max_sbrked_mem
+                0x2001954c        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
+                0x2001954c                __malloc_max_sbrked_mem
  .bss.__malloc_top_pad
-                0x20019788        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
-                0x20019788                __malloc_top_pad
- .bss.__sf      0x2001978c      0x138 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-findfp.o)
-                0x2001978c                __sf
+                0x20019550        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-mallocr.o)
+                0x20019550                __malloc_top_pad
+ .bss.__sf      0x20019554      0x138 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-findfp.o)
+                0x20019554                __sf
  .bss.__stdio_exit_handler
-                0x200198c4        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-findfp.o)
-                0x200198c4                __stdio_exit_handler
- .bss.errno     0x200198c8        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-reent.o)
-                0x200198c8                errno
+                0x2001968c        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-findfp.o)
+                0x2001968c                __stdio_exit_handler
+ .bss.errno     0x20019690        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-reent.o)
+                0x20019690                errno
  .bss.__lock___malloc_recursive_mutex
-                0x200198cc        0x1 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-lock.o)
-                0x200198cc                __lock___malloc_recursive_mutex
+                0x20019694        0x1 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-lock.o)
+                0x20019694                __lock___malloc_recursive_mutex
  .bss.__lock___atexit_recursive_mutex
-                0x200198cd        0x1 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-lock.o)
-                0x200198cd                __lock___atexit_recursive_mutex
+                0x20019695        0x1 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-lock.o)
+                0x20019695                __lock___atexit_recursive_mutex
  .bss.__lock___sfp_recursive_mutex
-                0x200198ce        0x1 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-lock.o)
-                0x200198ce                __lock___sfp_recursive_mutex
- *fill*         0x200198cf        0x1 
- .bss.__atexit  0x200198d0        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-__call_atexit.o)
-                0x200198d0                __atexit
+                0x20019696        0x1 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-lock.o)
+                0x20019696                __lock___sfp_recursive_mutex
+ *fill*         0x20019697        0x1 
+ .bss.__atexit  0x20019698        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-__call_atexit.o)
+                0x20019698                __atexit
  .bss.__atexit0
-                0x200198d4      0x190 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-__atexit.o)
-                0x200198d4                __atexit0
+                0x2001969c      0x190 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libc.a(libc_a-__atexit.o)
+                0x2001969c                __atexit0
  .bss.heap_end.0
-                0x20019a64        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libnosys.a(sbrk.o)
+                0x2001982c        0x4 C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libnosys.a(sbrk.o)
  *(COMMON)
-                0x20019a68                        . = ALIGN (0x4)
-                0x20019a68                        _ebss = .
-                0x20019a68                        __bss_end__ = _ebss
+                0x20019830                        . = ALIGN (0x4)
+                0x20019830                        _ebss = .
+                0x20019830                        __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x20019a68      0x600 load address 0x08030c88
-                0x20019a68                        . = ALIGN (0x8)
-                0x20019a68                        PROVIDE (end = .)
+                0x20019830      0x600 load address 0x08030c88
+                0x20019830                        . = ALIGN (0x8)
+                0x20019830                        PROVIDE (end = .)
                 [!provide]                        PROVIDE (_end = .)
-                0x20019c68                        . = (. + _Min_Heap_Size)
- *fill*         0x20019a68      0x200 
-                0x2001a068                        . = (. + _Min_Stack_Size)
- *fill*         0x20019c68      0x400 
-                0x2001a068                        . = ALIGN (0x8)
+                0x20019a30                        . = (. + _Min_Heap_Size)
+ *fill*         0x20019830      0x200 
+                0x20019e30                        . = (. + _Min_Stack_Size)
+ *fill*         0x20019a30      0x400 
+                0x20019e30                        . = ALIGN (0x8)
 
 /DISCARD/
  libc.a(*)
@@ -7258,58 +7258,58 @@ LOAD C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.ext
 LOAD C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp\libm.a
 LOAD C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/../lib/gcc/arm-none-eabi/12.3.1/thumb/v6-m/nofp\libgcc.a
 
-.debug_info     0x00000000    0x34d6d
+.debug_info     0x00000000    0x34d5c
  .debug_info    0x00000000     0x305b BOS\BOS.o
  .debug_info    0x0000305b      0xf25 BOS\BOS_CLI.o
  .debug_info    0x00003f80     0x30e1 BOS\BOS_CLIcommands.o
  .debug_info    0x00007061      0xbff BOS\BOS_dma.o
  .debug_info    0x00007c60      0x8c8 BOS\BOS_freertos.o
  .debug_info    0x00008528     0x18fe BOS\BOS_messaging.o
- .debug_info    0x00009e26     0x1b7f BOS\BOS_msgparser.o
- .debug_info    0x0000b9a5     0x4464 H2BR0\H2BR0.o
- .debug_info    0x0000fe09      0xbfa H2BR0\H2BR0_adc.o
- .debug_info    0x00010a03     0x12f1 H2BR0\H2BR0_dma.o
- .debug_info    0x00011cf4      0x8bf H2BR0\H2BR0_eeprom.o
- .debug_info    0x000125b3      0xf15 H2BR0\H2BR0_gpio.o
- .debug_info    0x000134c8     0x1a67 H2BR0\H2BR0_inputs.o
- .debug_info    0x00014f2f     0x16aa H2BR0\H2BR0_it.o
- .debug_info    0x000165d9      0xe0b H2BR0\H2BR0_rtc.o
- .debug_info    0x000173e4      0xe78 H2BR0\H2BR0_timers.o
- .debug_info    0x0001825c     0x174c H2BR0\H2BR0_uart.o
- .debug_info    0x000199a8       0x30 H2BR0\startup_stm32g0b1ceuxn.o
- .debug_info    0x000199d8      0x30b Thirdparty\CMSIS\STM32G0xx\Device\ST\STM32G0xx\Source\Templates\system_stm32g0xx.o
- .debug_info    0x00019ce3      0xeed Thirdparty\EEPROM_Emul\Core\eeprom_emul.o
- .debug_info    0x0001abd0      0x572 Thirdparty\EEPROM_Emul\Porting\STM32G0\flash_interface.o
- .debug_info    0x0001b142     0x17a2 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\CMSIS_RTOS\cmsis_os.o
- .debug_info    0x0001c8e4      0x69e Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\FreeRTOS_CLI.o
- .debug_info    0x0001cf82      0x2a4 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\list.o
- .debug_info    0x0001d226      0x27e Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\portable\GCC\ARM_CM0\port.o
- .debug_info    0x0001d4a4      0x448 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\portable\MemMang\heap_4.o
- .debug_info    0x0001d8ec     0x11f7 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\queue.o
- .debug_info    0x0001eae3     0x1ae1 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\tasks.o
- .debug_info    0x000205c4      0xe13 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\timers.o
- .debug_info    0x000213d7      0xaef Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal.o
- .debug_info    0x00021ec6     0x15c4 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_adc.o
- .debug_info    0x0002348a      0x8ce Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_cortex.o
- .debug_info    0x00023d58      0x53d Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_crc.o
- .debug_info    0x00024295      0x350 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_crc_ex.o
- .debug_info    0x000245e5      0x85e Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_dma.o
- .debug_info    0x00024e43      0x6b7 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_flash.o
- .debug_info    0x000254fa      0xb16 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_flash_ex.o
- .debug_info    0x00026010      0x5ce Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_gpio.o
- .debug_info    0x000265de       0xf1 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_msp_template.o
- .debug_info    0x000266cf      0x59f Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_pwr.o
- .debug_info    0x00026c6e      0x8aa Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_pwr_ex.o
- .debug_info    0x00027518      0xb90 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rcc.o
- .debug_info    0x000280a8      0xa36 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rcc_ex.o
- .debug_info    0x00028ade      0xc90 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rtc.o
- .debug_info    0x0002976e     0x1299 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rtc_ex.o
- .debug_info    0x0002aa07     0x2c07 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_tim.o
- .debug_info    0x0002d60e     0x1918 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_tim_ex.o
- .debug_info    0x0002ef26     0x4895 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_uart.o
- .debug_info    0x000337bb      0xfe5 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_uart_ex.o
- .debug_info    0x000347a0      0x1b9 User\main.o
- .debug_info    0x00034959      0x414 syscalls.o
+ .debug_info    0x00009e26     0x1b6e BOS\BOS_msgparser.o
+ .debug_info    0x0000b994     0x4464 H2BR0\H2BR0.o
+ .debug_info    0x0000fdf8      0xbfa H2BR0\H2BR0_adc.o
+ .debug_info    0x000109f2     0x12f1 H2BR0\H2BR0_dma.o
+ .debug_info    0x00011ce3      0x8bf H2BR0\H2BR0_eeprom.o
+ .debug_info    0x000125a2      0xf15 H2BR0\H2BR0_gpio.o
+ .debug_info    0x000134b7     0x1a67 H2BR0\H2BR0_inputs.o
+ .debug_info    0x00014f1e     0x16aa H2BR0\H2BR0_it.o
+ .debug_info    0x000165c8      0xe0b H2BR0\H2BR0_rtc.o
+ .debug_info    0x000173d3      0xe78 H2BR0\H2BR0_timers.o
+ .debug_info    0x0001824b     0x174c H2BR0\H2BR0_uart.o
+ .debug_info    0x00019997       0x30 H2BR0\startup_stm32g0b1ceuxn.o
+ .debug_info    0x000199c7      0x30b Thirdparty\CMSIS\STM32G0xx\Device\ST\STM32G0xx\Source\Templates\system_stm32g0xx.o
+ .debug_info    0x00019cd2      0xeed Thirdparty\EEPROM_Emul\Core\eeprom_emul.o
+ .debug_info    0x0001abbf      0x572 Thirdparty\EEPROM_Emul\Porting\STM32G0\flash_interface.o
+ .debug_info    0x0001b131     0x17a2 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\CMSIS_RTOS\cmsis_os.o
+ .debug_info    0x0001c8d3      0x69e Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\FreeRTOS_CLI.o
+ .debug_info    0x0001cf71      0x2a4 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\list.o
+ .debug_info    0x0001d215      0x27e Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\portable\GCC\ARM_CM0\port.o
+ .debug_info    0x0001d493      0x448 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\portable\MemMang\heap_4.o
+ .debug_info    0x0001d8db     0x11f7 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\queue.o
+ .debug_info    0x0001ead2     0x1ae1 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\tasks.o
+ .debug_info    0x000205b3      0xe13 Thirdparty\Middleware\STM32G0xx\FreeRTOS\Source\timers.o
+ .debug_info    0x000213c6      0xaef Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal.o
+ .debug_info    0x00021eb5     0x15c4 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_adc.o
+ .debug_info    0x00023479      0x8ce Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_cortex.o
+ .debug_info    0x00023d47      0x53d Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_crc.o
+ .debug_info    0x00024284      0x350 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_crc_ex.o
+ .debug_info    0x000245d4      0x85e Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_dma.o
+ .debug_info    0x00024e32      0x6b7 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_flash.o
+ .debug_info    0x000254e9      0xb16 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_flash_ex.o
+ .debug_info    0x00025fff      0x5ce Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_gpio.o
+ .debug_info    0x000265cd       0xf1 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_msp_template.o
+ .debug_info    0x000266be      0x59f Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_pwr.o
+ .debug_info    0x00026c5d      0x8aa Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_pwr_ex.o
+ .debug_info    0x00027507      0xb90 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rcc.o
+ .debug_info    0x00028097      0xa36 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rcc_ex.o
+ .debug_info    0x00028acd      0xc90 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rtc.o
+ .debug_info    0x0002975d     0x1299 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_rtc_ex.o
+ .debug_info    0x0002a9f6     0x2c07 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_tim.o
+ .debug_info    0x0002d5fd     0x1918 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_tim_ex.o
+ .debug_info    0x0002ef15     0x4895 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_uart.o
+ .debug_info    0x000337aa      0xfe5 Thirdparty\STM32G0xx_HAL_Driver\Src\stm32g0xx_hal_uart_ex.o
+ .debug_info    0x0003478f      0x1b9 User\main.o
+ .debug_info    0x00034948      0x414 syscalls.o
 
 .debug_abbrev   0x00000000     0x78d5
  .debug_abbrev  0x00000000      0x43c BOS\BOS.o
