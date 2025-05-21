@@ -42,8 +42,39 @@ uint8_t flag ;
 uint8_t tofMode ;
 
 /* Module Parameters */
-ModuleParam_t ModuleParam[NUM_MODULE_PARAMS] = { 0 };
 
+
+float H2BR0_ecgSample = 0.0f;
+float H2BR0_ecgFilteredSample = 0.0f;
+
+float H2BR0_eogSample = 0.0f;
+float H2BR0_eogFilteredSample = 0.0f;
+
+float H2BR0_eegSample = 0.0f;
+float H2BR0_eegFilteredSample = 0.0f;
+
+float H2BR0_emgSample = 0.0f;
+float H2BR0_emgFilteredSample = 0.0f;
+float H2BR0_emgRectifiedSample = 0.0f;
+float H2BR0_emgEnvelopeSample = 0.0f;
+
+/* Module exported parameters ------------------------------------------------*/
+/* Exported Typedef */
+ModuleParam_t ModuleParam[NUM_MODULE_PARAMS] = {
+    {.ParamPtr = &H2BR0_ecgSample, .ParamFormat = FMT_FLOAT, .ParamName = "ecgSample"},
+    {.ParamPtr = &H2BR0_ecgFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "ecgFilteredSample"},
+
+    {.ParamPtr = &H2BR0_eogSample, .ParamFormat = FMT_FLOAT, .ParamName = "eogSample"},
+    {.ParamPtr = &H2BR0_eogFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "eogFilteredSample"},
+
+    {.ParamPtr = &H2BR0_eegSample, .ParamFormat = FMT_FLOAT, .ParamName = "eegSample"},
+    {.ParamPtr = &H2BR0_eegFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "eegFilteredSample"},
+
+    {.ParamPtr = &H2BR0_emgSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgSample"},
+    {.ParamPtr = &H2BR0_emgFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgFilteredSample"},
+    {.ParamPtr = &H2BR0_emgRectifiedSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgRectifiedSample"},
+    {.ParamPtr = &H2BR0_emgEnvelopeSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgEnvelopeSample"}
+};
 /* Private Function Prototypes *********************************************/
 void MX_TIM2_Init(void);
 void Module_Peripheral_Init(void);
@@ -71,7 +102,10 @@ void EyeBlinkDetection();
 void EMG_Rectifying();
 void EMG_EnvelopeDetection();
 void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus);
-
+void SampleEMGBuf(float *buffer);
+void SampleEEGBuf(float *buffer);
+void SampleEOGBuf(float *buffer);
+void SampleECGBuf(float *buffer);
 Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 Module_Status EXG_SignalProcessing(void);
@@ -79,8 +113,10 @@ Module_Status EXG_SignalProcessing(void);
 static bool StreamCommandParser(const int8_t *pcCommandString, const char **ppSensName, portBASE_TYPE *pSensNameLen,
 														bool *pPortOrCLI, uint32_t *pPeriod, uint32_t *pTimeout, uint8_t *pPort, uint8_t *pModule);
 
-typedef void (*SampleMemsToString)(char *, size_t);
 
+/* Local Typedef related to stream functions */
+typedef void (*SampleToString)(char*,size_t);
+typedef void (*SampleToBuffer)(float *buffer);
 /* Create CLI commands *****************************************************/
 portBASE_TYPE CLI_PlotToTerminalCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_ECG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
@@ -741,6 +777,64 @@ uint8_t GetPort(UART_HandleTypeDef *huart){
 	return 0;
 }
 
+
+/***************************************************************************/
+/* This function is useful only for input (sensors) modules.
+ * @brief: Samples a module parameter value based on parameter index.
+ * @param paramIndex: Index of the parameter (1-based index).
+ * @param value: Pointer to store the sampled float value.
+ * @retval: Module_Status indicating success or failure.
+ */
+Module_Status GetModuleParameter(uint8_t paramIndex, float *value) {
+    Module_Status status = BOS_OK;
+
+    switch (paramIndex) {
+        /* Sample ECG */
+        case 1:
+            status = ECG_Sample(value, NULL);
+            break;
+        case 2:
+            status = ECG_Sample(NULL, value);
+            break;
+
+        /* Sample EOG */
+        case 3:
+            status = EOG_Sample(value, NULL);
+            break;
+        case 4:
+            status = EOG_Sample(NULL, value);
+            break;
+
+        /* Sample EEG */
+        case 5:
+            status = EEG_Sample(value, NULL);
+            break;
+        case 6:
+            status = EEG_Sample(NULL, value);
+            break;
+
+        /* Sample EMG */
+        case 7:
+            status = EMG_Sample(value, NULL, NULL, NULL);
+            break;
+        case 8:
+            status = EMG_Sample(NULL, value, NULL, NULL);
+            break;
+        case 9:
+            status = EMG_Sample(NULL, NULL, value, NULL);
+            break;
+        case 10:
+            status = EMG_Sample(NULL, NULL, NULL, value);
+            break;
+
+        /* Invalid parameter index */
+        default:
+            status = BOS_ERR_WrongParam;
+            break;
+    }
+
+    return status;
+}
 /***************************************************************************/
 /* Register this module CLI Commands */
 void RegisterModuleCLICommands(void){
@@ -755,25 +849,6 @@ void RegisterModuleCLICommands(void){
 	FreeRTOS_CLIRegisterCommand(&CLI_ECG_HeartRateCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_EOG_CheckEyeBlinkCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_LeadsStatusCommandDefinition);
-}
-
-/***************************************************************************/
-/* Samples a module parameter value based on parameter index.
- * paramIndex: Index of the parameter (1-based index).
- * value: Pointer to store the sampled float value.
- */
-Module_Status GetModuleParameter(uint8_t paramIndex, float *value) {
-	Module_Status status = BOS_OK;
-
-	switch (paramIndex) {
-
-	/* Invalid parameter index */
-	default:
-		status = BOS_ERR_WrongParam;
-		break;
-	}
-
-	return status;
 }
 
 /***************************************************************************/
@@ -894,6 +969,129 @@ Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,u
 }
 
 /***************************************************************************/
+/*
+ * @brief: Streams medical sensor data to a buffer.
+ * @param buffer: Pointer to the buffer where data will be stored.
+ * @param Numofsamples: Number of samples to take.
+ * @param timeout: Timeout period for the operation.
+ * @param function: Function pointer to the sampling function (e.g., SampleECGBuf, SampleEMGBuf).
+ * @retval: Module status indicating success or error.
+ */
+static Module_Status StreamToBuf(float *buffer, uint32_t Numofsamples, uint32_t timeout, SampleToBuffer function) {
+    Module_Status status = H2BR0_OK;
+    uint16_t StreamIndex = 0;
+    uint32_t period = timeout / Numofsamples;
+
+    /* Check if the calculated period is valid */
+    if (period < MIN_PERIOD_MS)
+        return H2BR0_ERR_UNKNOWNMESSAGE;
+
+    stopStream = false;
+
+    /* Stream data to buffer */
+    while ((Numofsamples-- > 0) && (timeout < MAX_TIMEOUT_MS)) {
+        if (function == SampleEMGBuf) {
+            float sample[4];
+            function(sample);
+            buffer[StreamIndex] = sample[0];      /* Raw sample */
+            buffer[StreamIndex + 1] = sample[1];  /* Filtered sample */
+            buffer[StreamIndex + 2] = sample[2];  /* Rectified sample */
+            buffer[StreamIndex + 3] = sample[3];  /* Envelope sample */
+            StreamIndex += 4;
+        } else {
+            float sample[2];
+            function(sample);
+            buffer[StreamIndex] = sample[0];      /* Raw sample */
+            buffer[StreamIndex + 1] = sample[1];  /* Filtered sample */
+            StreamIndex += 2;
+        }
+
+        /* Delay for the specified period */
+        vTaskDelay(pdMS_TO_TICKS(period));
+
+        /* Check if streaming should be stopped */
+        if (stopStream) {
+            status = H2BR0_ERR_TERMINATED;
+            break;
+        }
+    }
+
+    return status;
+}
+/***************************************************************************/
+/*
+ * @brief: Streams medical sensor data to a buffer.
+ * @param buffer: Pointer to the buffer where data will be stored.
+ * @param function: Type of data to sample (e.g., ECG, EOG, EEG, EMG).
+ * @param Numofsamples: Number of samples to take.
+ * @param timeout: Timeout period for the operation.
+ * @retval: Module status indicating success or error.
+ */
+Module_Status StreamToBuffer(float *buffer, InputSignal_EXG function, uint32_t Numofsamples, uint32_t timeout) {
+    switch (function) {
+        case ECG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleECGBuf);
+        case EOG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleEOGBuf);
+        case EEG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleEEGBuf);
+        case EMG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleEMGBuf);
+        default:
+            return H2BR0_ERR_UNKNOWNMESSAGE;
+    }
+}
+
+/*
+ * @brief: Samples ECG data into a buffer.
+ * @param buffer: Pointer to the buffer where ECG data will be stored.
+ * @retval: None
+ */
+void SampleECGBuf(float *buffer) {
+    float sample, filteredSample;
+    ECG_Sample(&sample, &filteredSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+}
+
+/*
+ * @brief: Samples EOG data into a buffer.
+ * @param buffer: Pointer to the buffer where EOG data will be stored.
+ * @retval: None
+ */
+void SampleEOGBuf(float *buffer) {
+    float sample, filteredSample;
+    EOG_Sample(&sample, &filteredSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+}
+
+/*
+ * @brief: Samples EEG data into a buffer.
+ * @param buffer: Pointer to the buffer where EEG data will be stored.
+ * @retval: None
+ */
+void SampleEEGBuf(float *buffer) {
+    float sample, filteredSample;
+    EEG_Sample(&sample, &filteredSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+}
+
+/*
+ * @brief: Samples EMG data into a buffer.
+ * @param buffer: Pointer to the buffer where EMG data will be stored.
+ * @retval: None
+ */
+void SampleEMGBuf(float *buffer) {
+    float sample, filteredSample, rectifiedSample, envelopeSample;
+    EMG_Sample(&sample, &filteredSample, &rectifiedSample, &envelopeSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+    buffer[2] = rectifiedSample;
+    buffer[3] = envelopeSample;
+}
+/***************************************************************************/
 static Module_Status PollingSleepCLISafe(uint32_t period, long Numofsamples)
 {
 	const unsigned DELTA_SLEEP_MS = 100; // milliseconds
@@ -922,12 +1120,12 @@ static Module_Status PollingSleepCLISafe(uint32_t period, long Numofsamples)
 }
 
 /***************************************************************************/
-static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, SampleMemsToString function)
+static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, SampleToString function)
 {
 	Module_Status status = H2BR0_OK;
 	int8_t *pcOutputString = NULL;
 	uint32_t period = timeout / Numofsamples;
-	if (period < MIN_MEMS_PERIOD_MS)
+	if (period < MIN_PERIOD_MS)
 		return H2BR0_ERR_WRONGPARAMS;
 
 	// TODO: Check if CLI is enable or not
@@ -948,7 +1146,7 @@ static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, Sa
 	long numTimes = timeout / period;
 	stopStream = false;
 
-	while ((numTimes-- > 0) || (timeout >= MAX_MEMS_TIMEOUT_MS)) {
+	while ((numTimes-- > 0) || (timeout >= MAX_TIMEOUT_MS)) {
 		pcOutputString = FreeRTOS_CLIGetOutputBuffer();
 		function((char *)pcOutputString, 100);
 
