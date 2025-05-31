@@ -1,5 +1,5 @@
 /*
- BitzOS (BOS) V0.3.6 - Copyright (C) 2017-2024 Hexabitz
+ BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
 
  File Name     : H2BR0.c
@@ -13,10 +13,11 @@
 
  */
 
-/* Includes ------------------------------------------------------------------*/
+/* Includes ****************************************************************/
 #include "BOS.h"
 #include "H2BR0_inputs.h"
 
+/* Exported Typedef ******************************************************/
 /* Define UART variables */
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -24,33 +25,65 @@ UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart6;
 
-/* Exported variables */
-extern FLASH_ProcessTypeDef pFlash;
-extern uint8_t numOfRecordedSnippets;
+TIM_HandleTypeDef htim2;  /* EXG special timer */
 
-/* Module exported parameters ------------------------------------------------*/
-module_param_t modParam[NUM_MODULE_PARAMS] ={{.paramPtr = NULL, .paramFormat =FMT_FLOAT, .paramName =""}};
-#define MIN_PERIOD_MS				100
-static bool StreamCommandParser(const int8_t *pcCommandString, const char **ppSensName, portBASE_TYPE *pSensNameLen,
-														bool *pPortOrCLI, uint32_t *pPeriod, uint32_t *pTimeout, uint8_t *pPort, uint8_t *pModule);
-typedef void (*SampleMemsToString)(char *, size_t);
-/* exported functions */
-
-/* Private variables ---------------------------------------------------------*/
-static bool stopStream = false;
 TaskHandle_t EXGTaskHandle = NULL;
 TaskHandle_t EXGSignalProcessingHandle = NULL;
+
 EXG_t exg;
+
+/* Private Variables *******************************************************/
+static bool stopStream = false;
 uint8_t port1, module1,mode1;
 uint8_t port2 ,module2,mode2;
 uint32_t Numofsamples1 ,timeout1;
 uint32_t Numofsamples2 ,timeout2;
 uint8_t flag ;
 uint8_t tofMode ;
-/* Private function prototypes -----------------------------------------------*/
-Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
-Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
-void ExecuteMonitor(void);
+
+/* Module Parameters */
+
+
+float H2BR0_ecgSample = 0.0f;
+float H2BR0_ecgFilteredSample = 0.0f;
+
+float H2BR0_eogSample = 0.0f;
+float H2BR0_eogFilteredSample = 0.0f;
+
+float H2BR0_eegSample = 0.0f;
+float H2BR0_eegFilteredSample = 0.0f;
+
+float H2BR0_emgSample = 0.0f;
+float H2BR0_emgFilteredSample = 0.0f;
+float H2BR0_emgRectifiedSample = 0.0f;
+float H2BR0_emgEnvelopeSample = 0.0f;
+
+/* Module exported parameters ------------------------------------------------*/
+/* Exported Typedef */
+ModuleParam_t ModuleParam[NUM_MODULE_PARAMS] = {
+    {.ParamPtr = &H2BR0_ecgSample, .ParamFormat = FMT_FLOAT, .ParamName = "ecgSample"},
+    {.ParamPtr = &H2BR0_ecgFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "ecgFilteredSample"},
+
+    {.ParamPtr = &H2BR0_eogSample, .ParamFormat = FMT_FLOAT, .ParamName = "eogSample"},
+    {.ParamPtr = &H2BR0_eogFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "eogFilteredSample"},
+
+    {.ParamPtr = &H2BR0_eegSample, .ParamFormat = FMT_FLOAT, .ParamName = "eegSample"},
+    {.ParamPtr = &H2BR0_eegFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "eegFilteredSample"},
+
+    {.ParamPtr = &H2BR0_emgSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgSample"},
+    {.ParamPtr = &H2BR0_emgFilteredSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgFilteredSample"},
+    {.ParamPtr = &H2BR0_emgRectifiedSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgRectifiedSample"},
+    {.ParamPtr = &H2BR0_emgEnvelopeSample, .ParamFormat = FMT_FLOAT, .ParamName = "emgEnvelopeSample"}
+};
+/* Private Function Prototypes *********************************************/
+void MX_TIM2_Init(void);
+void Module_Peripheral_Init(void);
+void SetupPortForRemoteBootloaderUpdate(uint8_t port);
+void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
+uint8_t ClearROtopology(void);
+Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src, uint8_t dst, uint8_t shift);
+
+/* Local Function Prototypes ***********************************************/
 void EXGTask(void *argument);
 void EXGSignalProcessing(void *argument);
 void EXG_Enable();
@@ -69,9 +102,22 @@ void EyeBlinkDetection();
 void EMG_Rectifying();
 void EMG_EnvelopeDetection();
 void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus);
+void SampleEMGBuf(float *buffer);
+void SampleEEGBuf(float *buffer);
+void SampleEOGBuf(float *buffer);
+void SampleECGBuf(float *buffer);
+Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
+Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout);
 Module_Status EXG_SignalProcessing(void);
 
-/* Create CLI commands --------------------------------------------------------*/
+static bool StreamCommandParser(const int8_t *pcCommandString, const char **ppSensName, portBASE_TYPE *pSensNameLen,
+														bool *pPortOrCLI, uint32_t *pPeriod, uint32_t *pTimeout, uint8_t *pPort, uint8_t *pModule);
+
+
+/* Local Typedef related to stream functions */
+typedef void (*SampleToString)(char*,size_t);
+typedef void (*SampleToBuffer)(float *buffer);
+/* Create CLI commands *****************************************************/
 portBASE_TYPE CLI_PlotToTerminalCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_ECG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE CLI_EOG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
@@ -84,175 +130,296 @@ portBASE_TYPE CLI_EOG_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWrite
 portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 portBASE_TYPE StreamEXGCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString );
 
-/*-----------------------------------------------------------*/
+/* CLI command structure ***************************************************/
 /* CLI command structure : PlotToTerminal */
-const CLI_Command_Definition_t CLI_PlotToTerminalCommandDefinition =
-{
+const CLI_Command_Definition_t CLI_PlotToTerminalCommandDefinition = {
 	( const int8_t * ) "plot", /* The command string to type. */
 	( const int8_t * ) "Plot:\r\nSending EMG,EEG,ECG,or EOG signals for a specific time in mSec.\r\n\r\n",
 	CLI_PlotToTerminalCommand, /* The function to run. */
 	2 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : ECG_Sample */
-const CLI_Command_Definition_t CLI_ECG_SampleCommandDefinition =
-{
+const CLI_Command_Definition_t CLI_ECG_SampleCommandDefinition = {
 	( const int8_t * ) "ecg_sample", /* The command string to type. */
 	( const int8_t * ) "ecg_sample:\r\nExtracting a normal sample and a filtered sample from the ECG signal.\r\n\r\n",
 	CLI_ECG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 const CLI_Command_Definition_t StreamCommandDefinition = {
 	(const int8_t *) "stream",
 	(const int8_t *) "stream:\r\n Syntax: stream [EMG]/[EEG]/[EOG]/[ECG] (Numofsamples ) (time in ms) [port] [module].\r\n\r\n",
 	StreamEXGCommand,
 	-1
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : EOG_Sample */
-const CLI_Command_Definition_t CLI_EOG_SampleCommandDefinition =
-{
+const CLI_Command_Definition_t CLI_EOG_SampleCommandDefinition = {
 	( const int8_t * ) "eog_sample", /* The command string to type. */
 	( const int8_t * ) "eog_sample:\r\n Extracting a normal sample and a filtered sample from the EOG signal. \r\n\r\n",
 	CLI_EOG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : EEG_Sample */
-const CLI_Command_Definition_t CLI_EEG_SampleCommandDefinition =
-{
+const CLI_Command_Definition_t CLI_EEG_SampleCommandDefinition = {
 	( const int8_t * ) "eeg_sample", /* The command string to type. */
 	( const int8_t * ) "eeg_sample:\r\n Extracting a normal sample and a filtered sample from the EEG signal. \r\n\r\n",
 	CLI_EEG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : EMG_Sample */
-const CLI_Command_Definition_t CLI_EMG_SampleCommandDefinition =
-{
+const CLI_Command_Definition_t CLI_EMG_SampleCommandDefinition = {
 	( const int8_t * ) "emg_sample", /* The command string to type. */
 	( const int8_t * ) "emg_sample:\r\n Extracting a normal sample, a filtered sample, a rectified sample, and an envelope sample from the EMG signal.\r\n\r\n",
 	CLI_EMG_SampleCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : EMG_SetThreshold */
-const CLI_Command_Definition_t CLI_EMG_SetThresholdCommandDefinition =
-{
+const CLI_Command_Definition_t CLI_EMG_SetThresholdCommandDefinition = {
 	( const int8_t * ) "emg_setthreshold", /* The command string to type. */
 	( const int8_t * ) "emg_setthreshold:\r\n Seting the threshold for EMG signal.\r\n\r\n",
 	CLI_EMG_SetThresholdCommand, /* The function to run. */
 	1 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : EMG_CheckPulse */
-const CLI_Command_Definition_t CLI_EMG_CheckPulseCommandDefinition =
-{
+const CLI_Command_Definition_t CLI_EMG_CheckPulseCommandDefinition = {
 	( const int8_t * ) "emg_checkpulse", /* The command string to type. */
 	( const int8_t * ) "emg_checkpulse:\r\n reading the time of how long the EMG signal lasted with the threshold value. \r\n\r\n",
 	CLI_EMG_CheckPulseCommand, /* The function to run. */
 	0 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : ECG_HeartRate */
-const CLI_Command_Definition_t CLI_ECG_HeartRateCommandDefinition =
-{
-	( const int8_t * ) "ecg_heartrate", /* The command string to type. */
-	( const int8_t * ) "ecg_heartrate:\r\n reading heart rate from the ECG signal. \r\n\r\n",
-	CLI_ECG_HeartRateCommand, /* The function to run. */
-	0 /* zero parameters are expected. */
+const CLI_Command_Definition_t CLI_ECG_HeartRateCommandDefinition = {
+		(const int8_t*) "ecg_heartrate", /* The command string to type. */
+		(const int8_t*) "ecg_heartrate:\r\n reading heart rate from the ECG signal. \r\n\r\n",
+		CLI_ECG_HeartRateCommand, /* The function to run. */
+		0 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : CheckEyeBlink */
-const CLI_Command_Definition_t CLI_EOG_CheckEyeBlinkCommandDefinition =
-{
-	( const int8_t * ) "eog_checkeyeblink", /* The command string to type. */
-	( const int8_t * ) "eog_checkeyeblink:\r\n reading eye movement state (rapid right or left - up or down) based on electrode placement. \r\n\r\n",
-	CLI_EOG_CheckEyeBlinkCommand, /* The function to run. */
-	0 /* zero parameters are expected. */
+const CLI_Command_Definition_t CLI_EOG_CheckEyeBlinkCommandDefinition = {
+		(const int8_t*) "eog_checkeyeblink", /* The command string to type. */
+		(const int8_t*) "eog_checkeyeblink:\r\n reading eye movement state (rapid right or left - up or down) based on electrode placement. \r\n\r\n",
+		CLI_EOG_CheckEyeBlinkCommand, /* The function to run. */
+		0 /* zero parameters are expected. */
 };
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 /* CLI command structure : LeadsStatus */
-const CLI_Command_Definition_t CLI_LeadsStatusCommandDefinition =
-{
-	( const int8_t * ) "leadsstatus", /* The command string to type. */
-	( const int8_t * ) "leadsstatus:\r\n reading Electrodes status. \r\n\r\n",
-	CLI_LeadsStatusCommand, /* The function to run. */
-	0 /* zero parameters are expected. */
+const CLI_Command_Definition_t CLI_LeadsStatusCommandDefinition = {
+		(const int8_t*) "leadsstatus", /* The command string to type. */
+		(const int8_t*) "leadsstatus:\r\n reading Electrodes status. \r\n\r\n",
+		CLI_LeadsStatusCommand, /* The function to run. */
+		0 /* zero parameters are expected. */
 };
 
-/*-----------------------------------------------------------*/
-
-/* -----------------------------------------------------------------------
- |						    	 Private Functions						 |
- -------------------------------------------------------------------------
+/***************************************************************************/
+/************************ Private function Definitions *********************/
+/***************************************************************************/
+/* @brief  System Clock Configuration
+ *         This function configures the system clock as follows:
+ *            - System Clock source            = PLL (HSE)
+ *            - SYSCLK(Hz)                     = 64000000
+ *            - HCLK(Hz)                       = 64000000
+ *            - AHB Prescaler                  = 1
+ *            - APB1 Prescaler                 = 1
+ *            - HSE Frequency(Hz)              = 8000000
+ *            - PLLM                           = 1
+ *            - PLLN                           = 16
+ *            - PLLP                           = 2
+ *            - Flash Latency(WS)              = 2
+ *            - Clock Source for UART1,UART2,UART3 = 16MHz (HSI)
  */
-
-/**
-* @brief  System Clock Configuration
-*         This function configures the system clock as follows:
-*            - System Clock source            = PLL (HSE)
-*            - SYSCLK(Hz)                     = 64000000
-*            - HCLK(Hz)                       = 64000000
-*            - AHB Prescaler                  = 1
-*            - APB1 Prescaler                 = 1
-*            - HSE Frequency(Hz)              = 8000000
-*            - PLLM                           = 1
-*            - PLLN                           = 16
-*            - PLLP                           = 2
-*            - Flash Latency(WS)              = 2
-*            - Clock Source for UART1,UART2,UART3 = 16MHz (HSI)
-* @param  None
-* @retval None
-*/
 void SystemClock_Config(void){
-   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+	RCC_OscInitTypeDef RCC_OscInitStruct ={0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct ={0};
 
-   /** Configure the main internal regulator output voltage */
-   HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
+	/** Configure the main internal regulator output voltage */
+	HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-   /** Initializes the RCC Oscillators according to the specified parameters
-    * in the RCC_OscInitTypeDef structure.
-    */
-   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE; // Enable both HSI and HSE oscillators
-   RCC_OscInitStruct.HSEState = RCC_HSE_ON; // Enable HSE (External High-Speed Oscillator)
-   RCC_OscInitStruct.HSIState = RCC_HSI_ON; // Enable HSI (Internal High-Speed Oscillator)
-   RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1; // No division on HSI
-   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT; // Default calibration value for HSI
-   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON; // Enable PLL
-   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE; // Set PLL source to HSE
-   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1; // Prescaler for PLL input
-   RCC_OscInitStruct.PLL.PLLN = 16; // Multiplication factor for PLL
-   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2; // PLLP division factor
-   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2; // PLLQ division factor
-   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2; // PLLR division factor
-   HAL_RCC_OscConfig(&RCC_OscInitStruct);
+	/* Initializes the RCC Oscillators according to the specified parameters
+	 * in the RCC_OscInitTypeDef structure.
+	 */
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE; // Enable both HSI and HSE oscillators
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON; // Enable HSE (External High-Speed Oscillator)
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON; // Enable HSI (Internal High-Speed Oscillator)
+	RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1; // No division on HSI
+	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT; // Default calibration value for HSI
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON; // Enable PLL
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE; // Set PLL source to HSE
+	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1; // Prescaler for PLL input
+	RCC_OscInitStruct.PLL.PLLN =16; // Multiplication factor for PLL
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2; // PLLP division factor
+	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2; // PLLQ division factor
+	RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2; // PLLR division factor
+	HAL_RCC_OscConfig(&RCC_OscInitStruct);
 
-   /** Initializes the CPU, AHB and APB buses clocks */
-   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1;
-   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK; // Select PLL as the system clock source
-   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1; // AHB Prescaler set to 1
-   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1; // APB1 Prescaler set to 1
+	/** Initializes the CPU, AHB and APB buses clocks */
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK; // Select PLL as the system clock source
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1; // AHB Prescaler set to 1
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1; // APB1 Prescaler set to 1
 
-   HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2); // Configure system clocks with flash latency of 2 WS
+	HAL_RCC_ClockConfig(&RCC_ClkInitStruct,FLASH_LATENCY_2); // Configure system clocks with flash latency of 2 WS
 }
 
+/***************************************************************************/
+/* enable stop mode regarding only UART1 , UART2 , and UART3 */
+BOS_Status EnableStopModebyUARTx(uint8_t port){
 
-/*-----------------------------------------------------------*/
+	UART_WakeUpTypeDef WakeUpSelection;
+	UART_HandleTypeDef *huart =GetUart(port);
 
-/* --- Save Command Topology in Flash RO --- */
+	if((huart->Instance == USART1) || (huart->Instance == USART2) || (huart->Instance == USART3)){
 
-uint8_t SaveTopologyToRO(void)
-{
+		/* make sure that no UART transfer is on-going */
+		while(__HAL_UART_GET_FLAG(huart, USART_ISR_BUSY) == SET);
+
+		/* make sure that UART is ready to receive */
+		while(__HAL_UART_GET_FLAG(huart, USART_ISR_REACK) == RESET);
+
+		/* set the wake-up event:
+		 * specify wake-up on start-bit detection */
+		WakeUpSelection.WakeUpEvent = UART_WAKEUP_ON_STARTBIT;
+		HAL_UARTEx_StopModeWakeUpSourceConfig(huart,WakeUpSelection);
+
+		/* Enable the UART Wake UP from stop mode Interrupt */
+		__HAL_UART_ENABLE_IT(huart,UART_IT_WUF);
+
+		/* enable MCU wake-up by LPUART */
+		HAL_UARTEx_EnableStopMode(huart);
+
+		/* enter STOP mode */
+		HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON,PWR_STOPENTRY_WFI);
+	}
+	else
+		return BOS_ERROR;
+
+}
+
+/***************************************************************************/
+/* Enable standby mode regarding wake-up pins:
+ * WKUP1: PA0  pin
+ * WKUP4: PA2  pin
+ * WKUP6: PB5  pin
+ * WKUP2: PC13 pin
+ * NRST pin
+ *  */
+BOS_Status EnableStandbyModebyWakeupPinx(WakeupPins_t wakeupPins){
+
+	/* Clear the WUF FLAG */
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF);
+
+	/* Enable the WAKEUP PIN */
+	switch(wakeupPins){
+
+		case PA0_PIN:
+			HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1); /* PA0 */
+			break;
+
+		case PA2_PIN:
+			HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN4); /* PA2 */
+			break;
+
+		case PB5_PIN:
+			HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN6); /* PB5 */
+			break;
+
+		case PC13_PIN:
+			HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN2); /* PC13 */
+			break;
+
+		case NRST_PIN:
+			/* do no thing*/
+			break;
+	}
+
+	/* Enable SRAM content retention in Standby mode */
+	HAL_PWREx_EnableSRAMRetention();
+
+	/* Finally enter the standby mode */
+	HAL_PWR_EnterSTANDBYMode();
+
+	return BOS_OK;
+}
+
+/***************************************************************************/
+/* Disable standby mode regarding wake-up pins:
+ * WKUP1: PA0  pin
+ * WKUP4: PA2  pin
+ * WKUP6: PB5  pin
+ * WKUP2: PC13 pin
+ * NRST pin
+ *  */
+BOS_Status DisableStandbyModeWakeupPinx(WakeupPins_t wakeupPins){
+
+	/* The standby wake-up is same as a system RESET:
+	 * The entire code runs from the beginning just as if it was a RESET.
+	 * The only difference between a reset and a STANDBY wake-up is that, when the MCU wakes-up,
+	 * The SBF status flag in the PWR power control/status register (PWR_CSR) is set */
+	if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET){
+		/* clear the flag */
+		__HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+
+		/* Disable  Wake-up Pinx */
+		switch(wakeupPins){
+
+			case PA0_PIN:
+				HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1); /* PA0 */
+				break;
+
+			case PA2_PIN:
+				HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN4); /* PA2 */
+				break;
+
+			case PB5_PIN:
+				HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN6); /* PB5 */
+				break;
+
+			case PC13_PIN:
+				HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2); /* PC13 */
+				break;
+
+			case NRST_PIN:
+				/* do no thing*/
+				break;
+		}
+
+		IND_blink(1000);
+
+	}
+	else
+		return BOS_OK;
+
+}
+
+/***************************************************************************/
+/* Save Command Topology in Flash RO */
+uint8_t SaveTopologyToRO(void){
+
 	HAL_StatusTypeDef flashStatus =HAL_OK;
+
 	/* flashAdd is initialized with 8 because the first memory room in topology page
 	 * is reserved for module's ID */
-	uint16_t flashAdd = 8;
-    uint16_t temp =0;
+	uint16_t flashAdd =8;
+	uint16_t temp =0;
 
-    /* Unlock the FLASH control register access */
+	/* Unlock the FLASH control register access */
 	HAL_FLASH_Unlock();
 
 	/* Erase Topology page */
@@ -295,13 +462,13 @@ uint8_t SaveTopologyToRO(void)
 
 		/* Save topology */
 		for(uint8_t row =1; row <= N; row++){
-			for(uint8_t column =0; column <= MaxNumOfPorts; column++){
+			for(uint8_t column =0; column <= MAX_NUM_OF_PORTS; column++){
 				/* Check the module serial number
 				 * Note: there isn't a module has serial number 0
 				 */
-				if(array[row - 1][0]){
-					/* Save each element in topology array in Flash memory */
-					HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,TOPOLOGY_START_ADDRESS + flashAdd,array[row - 1][column]);
+				if(Array[row - 1][0]){
+					/* Save each element in topology Array in Flash memory */
+					HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,TOPOLOGY_START_ADDRESS + flashAdd,Array[row - 1][column]);
 					/* Wait for a Write operation to complete */
 					flashStatus =FLASH_WaitForLastOperation((uint32_t ) HAL_FLASH_TIMEOUT_VALUE);
 					if(flashStatus != HAL_OK){
@@ -312,7 +479,7 @@ uint8_t SaveTopologyToRO(void)
 						/* If the program operation is completed, disable the PG Bit */
 						CLEAR_BIT(FLASH->CR,FLASH_CR_PG);
 						/* update new flash memory address */
-						flashAdd += 8;
+						flashAdd +=8;
 					}
 				}
 			}
@@ -322,18 +489,15 @@ uint8_t SaveTopologyToRO(void)
 	HAL_FLASH_Lock();
 }
 
-/*-----------------------------------------------------------*/
-
-/* --- Save Command Snippets in Flash RO --- */
-
-uint8_t SaveSnippetsToRO(void)
-{
+/***************************************************************************/
+/* Save Command Snippets in Flash RO */
+uint8_t SaveSnippetsToRO(void){
 	HAL_StatusTypeDef FlashStatus =HAL_OK;
-    uint8_t snipBuffer[sizeof(snippet_t) + 1] ={0};
+	uint8_t snipBuffer[sizeof(Snippet_t) + 1] ={0};
 
-    /* Unlock the FLASH control register access */
+	/* Unlock the FLASH control register access */
 	HAL_FLASH_Unlock();
-    /* Erase Snippets page */
+	/* Erase Snippets page */
 	FLASH_PageErase(FLASH_BANK_2,SNIPPETS_PAGE_NUM);
 	/* Wait for an Erase operation to complete */
 	FlashStatus =FLASH_WaitForLastOperation((uint32_t ) HAL_FLASH_TIMEOUT_VALUE);
@@ -349,15 +513,15 @@ uint8_t SaveSnippetsToRO(void)
 
 	/* Save Command Snippets */
 	int currentAdd = SNIPPETS_START_ADDRESS;
-	for(uint8_t index = 0; index < numOfRecordedSnippets; index++){
+	for(uint8_t index =0; index < NumOfRecordedSnippets; index++){
 		/* Check if Snippet condition is true or false */
-		if(snippets[index].cond.conditionType){
+		if(Snippets[index].Condition.ConditionType){
 			/* A marker to separate Snippets */
 			snipBuffer[0] =0xFE;
-			memcpy((uint32_t* )&snipBuffer[1],(uint8_t* )&snippets[index],sizeof(snippet_t));
-			/* Copy the snippet struct buffer (20 x numOfRecordedSnippets). Note this is assuming sizeof(snippet_t) is even */
-			for(uint8_t j =0; j < (sizeof(snippet_t)/4); j++){
-				HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,currentAdd,*(uint64_t* )&snipBuffer[j*8]);
+			memcpy((uint32_t* )&snipBuffer[1],(uint8_t* )&Snippets[index],sizeof(Snippet_t));
+			/* Copy the snippet struct buffer (20 x NumOfRecordedSnippets). Note this is assuming sizeof(Snippet_t) is even */
+			for(uint8_t j =0; j < (sizeof(Snippet_t) / 4); j++){
+				HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,currentAdd,*(uint64_t* )&snipBuffer[j * 8]);
 				FlashStatus =FLASH_WaitForLastOperation((uint32_t ) HAL_FLASH_TIMEOUT_VALUE);
 				if(FlashStatus != HAL_OK){
 					return pFlash.ErrorCode;
@@ -369,8 +533,8 @@ uint8_t SaveSnippetsToRO(void)
 				}
 			}
 			/* Copy the snippet commands buffer. Always an even number. Note the string termination char might be skipped */
-			for(uint8_t j = 0; j < ((strlen(snippets[index].cmd) + 1)/4); j++){
-				HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,currentAdd,*(uint64_t* )(snippets[index].cmd + j*4 ));
+			for(uint8_t j =0; j < ((strlen(Snippets[index].CMD) + 1) / 4); j++){
+				HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD,currentAdd,*(uint64_t* )(Snippets[index].CMD + j * 4));
 				FlashStatus =FLASH_WaitForLastOperation((uint32_t ) HAL_FLASH_TIMEOUT_VALUE);
 				if(FlashStatus != HAL_OK){
 					return pFlash.ErrorCode;
@@ -378,7 +542,7 @@ uint8_t SaveSnippetsToRO(void)
 				else{
 					/* If the program operation is completed, disable the PG Bit */
 					CLEAR_BIT(FLASH->CR,FLASH_CR_PG);
-					currentAdd += 8;
+					currentAdd +=8;
 				}
 			}
 		}
@@ -387,28 +551,25 @@ uint8_t SaveSnippetsToRO(void)
 	HAL_FLASH_Lock();
 }
 
-/*-----------------------------------------------------------*/
-
-/* --- Clear array topology in SRAM and Flash RO --- */
-
+/***************************************************************************/
+/* Clear Array topology in SRAM and Flash RO */
 uint8_t ClearROtopology(void){
-	// Clear the array 
-	memset(array,0,sizeof(array));
+	/* Clear the Array */
+	memset(Array,0,sizeof(Array));
 	N =1;
 	myID =0;
 	
 	return SaveTopologyToRO();
 }
-/*-----------------------------------------------------------*/
 
-/* --- Trigger ST factory bootloader update for a remote module.
- */
-void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport){
+/***************************************************************************/
+/* Trigger ST factory bootloader update for a remote module */
+void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport){
 
 	uint8_t myOutport =0, lastModule =0;
 	int8_t *pcOutputString;
 
-	/* 1. Get route to destination module */
+	/* 1. Get Route to destination module */
 	myOutport =FindRoute(myID,dst);
 	if(outport && dst == myID){ /* This is a 'via port' update and I'm the last module */
 		myOutport =outport;
@@ -418,14 +579,14 @@ void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outpo
 		if(NumberOfHops(dst)== 1)
 		lastModule = myID;
 		else
-		lastModule = route[NumberOfHops(dst)-1]; /* previous module = route[Number of hops - 1] */
+		lastModule = Route[NumberOfHops(dst)-1]; /* previous module = Route[Number of hops - 1] */
 	}
 
 	/* 2. If this is the source of the message, show status on the CLI */
 	if(src == myID){
 		/* Obtain the address of the output buffer.  Note there is no mutual
-		 exclusion on this buffer as it is assumed only one command console
-		 interface will be used at any one time. */
+		 * exclusion on this buffer as it is assumed only one command console
+		 * interface will be used at any one time. */
 		pcOutputString =FreeRTOS_CLIGetOutputBuffer();
 
 		if(outport == 0)		// This is a remote module update
@@ -443,17 +604,15 @@ void remoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outpo
 	SetupPortForRemoteBootloaderUpdate(inport);
 	SetupPortForRemoteBootloaderUpdate(myOutport);
 
-
 	/* 5. Build a DMA stream between my inport and outport */
 	StartScastDMAStream(inport,myID,myOutport,myID,BIDIRECTIONAL,0xFFFFFFFF,0xFFFFFFFF,false);
 }
 
-/*-----------------------------------------------------------*/
-
-/* --- Setup a port for remote ST factory bootloader update:
- - Set baudrate to 57600
- - Enable even parity
- - Set datasize to 9 bits
+/***************************************************************************/
+/* Setup a port for remote ST factory bootloader update:
+ * Set baudrate to 57600
+ * Enable even parity
+ * Set datasize to 9 bits
  */
 void SetupPortForRemoteBootloaderUpdate(uint8_t port){
 
@@ -462,17 +621,18 @@ void SetupPortForRemoteBootloaderUpdate(uint8_t port){
 	huart->Init.Parity = UART_PARITY_EVEN;
 	huart->Init.WordLength = UART_WORDLENGTH_9B;
 	HAL_UART_Init(huart);
+
 	/* The CLI port RXNE interrupt might be disabled so enable here again to be sure */
 	__HAL_UART_ENABLE_IT(huart,UART_IT_RXNE);
 
 }
 
-/* --- H2BR0 module initialization.
- */
-void Module_Peripheral_Init(void){
+/***************************************************************************/
+/* H2BR0 module initialization */
+void Module_Peripheral_Init(void) {
 
-	 __HAL_RCC_GPIOB_CLK_ENABLE();
-	 __HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
 
 	/* Array ports */
 	MX_USART1_UART_Init();
@@ -483,124 +643,124 @@ void Module_Peripheral_Init(void){
 	MX_TIM2_Init();
 	MX_ADC1_Init();
 
-	 //Circulating DMA Channels ON All Module
-	for (int i = 1; i <= NumOfPorts; i++) {
+	//Circulating DMA Channels ON All Module
+	for (int i = 1; i <= NUM_OF_PORTS; i++) {
 		if (GetUart(i) == &huart1) {
-			index_dma[i - 1] = &(DMA1_Channel1->CNDTR);
+			dmaIndex[i - 1] = &(DMA1_Channel1->CNDTR);
 		} else if (GetUart(i) == &huart2) {
-			index_dma[i - 1] = &(DMA1_Channel2->CNDTR);
+			dmaIndex[i - 1] = &(DMA1_Channel2->CNDTR);
 		} else if (GetUart(i) == &huart3) {
-			index_dma[i - 1] = &(DMA1_Channel3->CNDTR);
+			dmaIndex[i - 1] = &(DMA1_Channel3->CNDTR);
 		} else if (GetUart(i) == &huart5) {
-			index_dma[i - 1] = &(DMA1_Channel4->CNDTR);
+			dmaIndex[i - 1] = &(DMA1_Channel4->CNDTR);
 		} else if (GetUart(i) == &huart6) {
-			index_dma[i - 1] = &(DMA1_Channel5->CNDTR);
+			dmaIndex[i - 1] = &(DMA1_Channel5->CNDTR);
 		}
 	}
 //	 xTaskCreate(EXGTask,(const char* ) "EXGTask",configMINIMAL_STACK_SIZE,NULL,osPriorityNormal - osPriorityIdle,&EXGTaskHandle);
 
-	 xTaskCreate(EXGSignalProcessing,(const char* ) "EXGSignalProcessingTask",configMINIMAL_STACK_SIZE,NULL,osPriorityRealtime - osPriorityIdle,&EXGSignalProcessingHandle);
+	xTaskCreate(EXGSignalProcessing, (const char*) "EXGSignalProcessingTask",
+			configMINIMAL_STACK_SIZE, NULL, osPriorityRealtime - osPriorityIdle,
+			&EXGSignalProcessingHandle);
 
 }
 
-/*-----------------------------------------------------------*/
-/* --- H2BR0 message processing task.
- */
-Module_Status Module_MessagingTask(uint16_t code,uint8_t port,uint8_t src,uint8_t dst,uint8_t shift){
-	Module_Status result =H2BR0_OK;
-	uint8_t uint8Data=0;
-    uint16_t uint16Data=0;
-    uint8_t EMGDetectionFlag=0;
-    uint16_t EMGDurationMsec=0;
-    uint8_t heartRate=0;
-    uint8_t module;
-	switch(code){
+/***************************************************************************/
+/* H2BR0 message processing task */
+Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src,
+		uint8_t dst, uint8_t shift) {
+	Module_Status result = H2BR0_OK;
+	uint8_t uint8Data = 0;
+	uint16_t uint16Data = 0;
+	uint8_t EMGDetectionFlag = 0;
+	uint16_t EMGDurationMsec = 0;
+	uint8_t heartRate = 0;
+	uint8_t module;
+
+	switch (code) {
 	case CODE_H2BR0_ECG_Sample:
-		{
-			EXG_Init(ECG);
-			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],ECG);
-			break;
-		}
+		EXG_Init(ECG);
+		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], ECG);
+		break;
+
 	case CODE_H2BR0_EOG_Sample:
-		{
-			EXG_Init(EOG);
-			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EOG);
-			break;
-		}
+		EXG_Init(EOG);
+		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], EOG);
+		break;
+
 	case CODE_H2BR0_EEG_Sample:
-		{
-			EXG_Init(EEG);
-			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EEG);
-			break;
-		}
+		EXG_Init(EEG);
+		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], EEG);
+		break;
+
 	case CODE_H2BR0_EMG_Sample:
-		{
-			EXG_Init(EMG);
-			SampletoPort(cMessage[port-1][shift],cMessage[port-1][1+shift],EMG);
-			break;
-		}
+		EXG_Init(EMG);
+		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], EMG);
+		break;
+
 	case CODE_H2BR0_EMG_SetThreshold:
-		{
-			EXG_Init(EMG);
-			EMG_SetThreshold(cMessage[port-1][shift]);
-			break;
-		}
+		EXG_Init(EMG);
+		EMG_SetThreshold(cMessage[port - 1][shift]);
+		break;
+
 	case CODE_H2BR0_EMG_CheckPulse:
-		{
-			Module_Status status =H2BR0_OK;
-			module = cMessage[port-1][shift];
-			port = cMessage[port-1][1+shift];
-			EXG_Init(EMG);
-			status = EMG_CheckPulse(&EMGDetectionFlag,&EMGDurationMsec);
-			if (H2BR0_OK == status)
-						messageParams[1] = BOS_OK;
-					else
-						messageParams[1] = BOS_ERROR;
-			messageParams[0] =FMT_UINT16;
-			messageParams[2] =2;
-			messageParams[3] =(uint8_t)((*(uint16_t *) &EMGDetectionFlag) >> 0);
-			messageParams[4] =(uint8_t)((*(uint16_t *) &EMGDetectionFlag) >> 8);
-			messageParams[5] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 0);
-			messageParams[6] =(uint8_t)((*(uint16_t *) &EMGDurationMsec) >> 8);
-			SendMessageToModule(module,CODE_PORT_FORWARD,7);
-			break;
-		}
+		module = cMessage[port - 1][shift];
+		port = cMessage[port - 1][1 + shift];
+
+		EXG_Init(EMG);
+
+		result = EMG_CheckPulse(&EMGDetectionFlag, &EMGDurationMsec);
+
+		if (H2BR0_OK == result)
+			MessageParams[1] = BOS_OK;
+		else
+			MessageParams[1] = BOS_ERROR;
+
+		MessageParams[0] = FMT_UINT16;
+		MessageParams[2] = 2;
+		MessageParams[3] = (uint8_t) ((*(uint16_t*) &EMGDetectionFlag) >> 0);
+		MessageParams[4] = (uint8_t) ((*(uint16_t*) &EMGDetectionFlag) >> 8);
+		MessageParams[5] = (uint8_t) ((*(uint16_t*) &EMGDurationMsec) >> 0);
+		MessageParams[6] = (uint8_t) ((*(uint16_t*) &EMGDurationMsec) >> 8);
+		SendMessageToModule(module, CODE_PORT_FORWARD, 7);
+		break;
+
 	case CODE_H2BR0_ECG_HeartRate:
-		{
-			Module_Status status =H2BR0_OK;
-			module = cMessage[port-1][shift];
-		    port = cMessage[port-1][1+shift];
-		    EXG_Init(ECG);
-		    status = ECG_HeartRate(&heartRate);
-			if (H2BR0_OK == status)
-						messageParams[1] = BOS_OK;
-					else
-						messageParams[1] = BOS_ERROR;
-			messageParams[0] =FMT_UINT8;
-			messageParams[2] =1;
-			messageParams[3] =(uint8_t)EMGDetectionFlag;
-			SendMessageToModule(module,CODE_PORT_FORWARD,4);
-			break;
-		}
+		module = cMessage[port - 1][shift];
+		port = cMessage[port - 1][1 + shift];
+
+		EXG_Init(ECG);
+
+		result = ECG_HeartRate(&heartRate);
+		if (H2BR0_OK == result)
+			MessageParams[1] = BOS_OK;
+		else
+			MessageParams[1] = BOS_ERROR;
+
+		MessageParams[0] = FMT_UINT8;
+		MessageParams[2] = 1;
+		MessageParams[3] = (uint8_t) EMGDetectionFlag;
+		SendMessageToModule(module, CODE_PORT_FORWARD, 4);
+		break;
+
 	case CODE_H2BR0_EOG_CheckEyeBlink:
-		{
 
-			break;
-		}
+		break;
+
 	case CODE_H2BR0_LeadsStatus:
-		{
 
-			break;
-		}
-		default:
-			result =H2BR0_ERR_UNKNOWNMESSAGE;
-			break;
+		break;
+
+	default:
+		result = H2BR0_ERR_UNKNOWNMESSAGE;
+		break;
 	}
 
 	return result;
 }
-/* --- Get the port for a given UART. 
- */
+
+/***************************************************************************/
+/* Get the port for a given UART */
 uint8_t GetPort(UART_HandleTypeDef *huart){
 
 	if(huart->Instance == USART6)
@@ -617,10 +777,66 @@ uint8_t GetPort(UART_HandleTypeDef *huart){
 	return 0;
 }
 
-/*-----------------------------------------------------------*/
 
-/* --- Register this module CLI Commands
+/***************************************************************************/
+/* This function is useful only for input (sensors) modules.
+ * @brief: Samples a module parameter value based on parameter index.
+ * @param paramIndex: Index of the parameter (1-based index).
+ * @param value: Pointer to store the sampled float value.
+ * @retval: Module_Status indicating success or failure.
  */
+Module_Status GetModuleParameter(uint8_t paramIndex, float *value) {
+    Module_Status status = BOS_OK;
+
+    switch (paramIndex) {
+        /* Sample ECG */
+        case 1:
+            status = ECG_Sample(value, NULL);
+            break;
+        case 2:
+            status = ECG_Sample(NULL, value);
+            break;
+
+        /* Sample EOG */
+        case 3:
+            status = EOG_Sample(value, NULL);
+            break;
+        case 4:
+            status = EOG_Sample(NULL, value);
+            break;
+
+        /* Sample EEG */
+        case 5:
+            status = EEG_Sample(value, NULL);
+            break;
+        case 6:
+            status = EEG_Sample(NULL, value);
+            break;
+
+        /* Sample EMG */
+        case 7:
+            status = EMG_Sample(value, NULL, NULL, NULL);
+            break;
+        case 8:
+            status = EMG_Sample(NULL, value, NULL, NULL);
+            break;
+        case 9:
+            status = EMG_Sample(NULL, NULL, value, NULL);
+            break;
+        case 10:
+            status = EMG_Sample(NULL, NULL, NULL, value);
+            break;
+
+        /* Invalid parameter index */
+        default:
+            status = BOS_ERR_WrongParam;
+            break;
+    }
+
+    return status;
+}
+/***************************************************************************/
+/* Register this module CLI Commands */
 void RegisterModuleCLICommands(void){
 	FreeRTOS_CLIRegisterCommand(&CLI_PlotToTerminalCommandDefinition);
 	FreeRTOS_CLIRegisterCommand(&CLI_ECG_SampleCommandDefinition);
@@ -635,33 +851,30 @@ void RegisterModuleCLICommands(void){
 	FreeRTOS_CLIRegisterCommand(&CLI_LeadsStatusCommandDefinition);
 }
 
-/*-----------------------------------------------------------*/
-
+/***************************************************************************/
 /* Module special task function (if needed) */
 
-void EXGTask(void *argument){
-
+void EXGTask(void *argument) {
 	EyeBlinkingStatus eyeBlinkStatus;
 	LeadsStatus_EXG wiresStatus;
 
 	/* Infinite loop */
 	uint8_t cases; // Test variable.
 
-
-	for(;;){
+	for (;;) {
 		/*  */
 
-		switch(tofMode){
-		case STREAM_TO_PORT :
+		switch (tofMode) {
+		case STREAM_TO_PORT:
 			ExportStreanToPort(module2, port2, mode2, Numofsamples2, timeout2);
 			break;
-		case STREAM_TO_Terminal :
-			ExportStreanToTerminal( port1, mode1, Numofsamples1, timeout1);
+		case STREAM_TO_Terminal:
+			ExportStreanToTerminal(port1, mode1, Numofsamples1, timeout1);
 			break;
 
-			default:
-				osDelay(10);
-				break;
+		default:
+			osDelay(10);
+			break;
 		}
 
 		taskYIELD();
@@ -669,909 +882,10 @@ void EXGTask(void *argument){
 
 }
 
-
-/*-----------------------------------------------------------*/
-/* */
-void EXGSignalProcessing(void *argument) {
-
-    for(;;)
-    {
-        // Wait for ISR notification
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-        // Process EXG Signal
-        EXG_SignalProcessing();
-    }
-
-}
-/* -----------------------------------------------------------------------
- |							 	Local  APIs			    		          | 																 	|
-/* -----------------------------------------------------------------------
- */
-void EXG_Enable()
-{
-	HAL_GPIO_WritePin(SDN_EXG_GPIO_Port, SDN_EXG_Pin, GPIO_PIN_SET);
-	exg.EXGStatus = EXG_ENABLED;
-}
-/*-----------------------------------------------------------*/
-void EXG_Disable()
-{
-	HAL_GPIO_WritePin(SDN_EXG_GPIO_Port, SDN_EXG_Pin, GPIO_PIN_RESET);
-	exg.EXGStatus = EXG_DISABLED;
-}
-/*-----------------------------------------------------------*/
-void EXG_Reset()
-{
-	EXG_Disable();
-	HAL_Delay(10);
-	EXG_Enable();
-}
-/*-----------------------------------------------------------*/
-void GetSamplingFlag(uint8_t *samplingFlag)
-{
-	*samplingFlag =exg.samplingFlag;
-}
-/*-----------------------------------------------------------*/
-void ResetSamplingFlag()
-{
-	exg.samplingFlag = 0;
-}
-/*-----------------------------------------------------------*/
-void SetSamplingFlag()
-{
-	exg.samplingFlag = 1;
-}
-/*-----------------------------------------------------------*/
-void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus)
-{
-	GPIO_PinState LODPStatus;
-	GPIO_PinState LODNStatus;
-	LODPStatus = HAL_GPIO_ReadPin(LODP_EXG_GPIO_Port, LODP_EXG_Pin);
-	LODNStatus = HAL_GPIO_ReadPin(LODN_EXG_GPIO_Port, LODN_EXG_Pin);
-	if (LODPStatus == GPIO_PIN_RESET && LODNStatus == GPIO_PIN_RESET)
-		*leadsStatus = LEADP_CONNECTED_LEADN_CONNECTED;
-	else if (LODPStatus == GPIO_PIN_RESET && LODNStatus == GPIO_PIN_SET)
-		*leadsStatus = LEADP_CONNECTED_LEADN_NOTCONNECTED;
-	else if (LODPStatus == GPIO_PIN_SET && LODNStatus == GPIO_PIN_RESET)
-		*leadsStatus = LEADP_NOTCONNECTED_LEADN_CONNECTED;
-	else *leadsStatus = LEADP_NOTCONNECTED_LEADN_NOTCONNECTED;
-	exg.statusOfLeads = *leadsStatus;
-}
-/*-----------------------------------------------------------*/
-void ECG_Filter()
-{
-	float input1 = exg.analogSample;
-	float preInput1 = exg.tempFilterInputBuffer[0];
-	float beforePreInput1 = exg.tempFilterInputBuffer[1];
-	float output1;
-	float preOutput1 = exg.tempFilterOutputBuffer[0];
-	float beforePreOutput1 = exg.tempFilterOutputBuffer[1];
-	// LPF: Fs=120sps, Fc=40Hz, Order=2
-	output1= -0.6202 * preOutput1 - 0.2404 * beforePreOutput1 + 0.4652 * input1 + 0.9303 * preInput1 + 0.4652 * beforePreInput1;
-	beforePreInput1 = preInput1;
-	preInput1 = input1;
-	beforePreOutput1 = preOutput1;
-	preOutput1= output1;
-	exg.tempFilterInputBuffer[0] = preInput1;
-	exg.tempFilterInputBuffer[1] = beforePreInput1;
-	exg.tempFilterOutputBuffer[0] = preOutput1;
-	exg.tempFilterOutputBuffer[1] = beforePreOutput1;
-
-	float input2 = output1;
-	float preInput2 = exg.tempFilterInputBuffer[2];
-	float beforePreInput2 = exg.tempFilterInputBuffer[3];
-	float output2;
-	float preOutput2 = exg.tempFilterOutputBuffer[2];
-	float beforePreOutput2 = exg.tempFilterOutputBuffer[3];
-	// LPF: Fs=120sps, Fc=40Hz, Order=2
-	output2= -0.6202 * preOutput2 - 0.2404 * beforePreOutput2 + 0.4652 * input2 + 0.9303 * preInput2 + 0.4652 * beforePreInput2;
-	beforePreInput2 = preInput2;
-	preInput2 = input2;
-	beforePreOutput2 = preOutput2;
-	preOutput2= output2;
-	exg.tempFilterInputBuffer[2] = preInput2;
-	exg.tempFilterInputBuffer[3] = beforePreInput2;
-	exg.tempFilterOutputBuffer[2] = preOutput2;
-	exg.tempFilterOutputBuffer[3] = beforePreOutput2;
-	exg.filteredSample = output2;
-}
-/*-----------------------------------------------------------*/
-void EOG_Filter()
-{
-	float input = exg.analogSample;
-	float preInput = exg.tempFilterInputBuffer[0];
-	float beforePreInput = exg.tempFilterInputBuffer[1];
-	float output;
-	float preOutput = exg.tempFilterOutputBuffer[0];
-	float beforePreOutput = exg.tempFilterOutputBuffer[1];
-	// LPF: Fs=100sps, Fc=25Hz, Order=2
-	output= -0.0 * preOutput - 0.1716 * beforePreOutput + 0.2929 * input + 0.5858 * preInput + 0.2929 * beforePreInput;
-	beforePreInput = preInput;
-	preInput = input;
-	beforePreOutput = preOutput;
-	preOutput= output;
-	exg.tempFilterInputBuffer[0] = preInput;
-	exg.tempFilterInputBuffer[1] = beforePreInput;
-	exg.tempFilterOutputBuffer[0] = preOutput;
-	exg.tempFilterOutputBuffer[1] = beforePreOutput;
-	exg.filteredSample = output;
-}
-/*-----------------------------------------------------------*/
-void EEG_Filter()
-{
-	float input = exg.analogSample;
-	float preInput = exg.tempFilterInputBuffer[0];
-	float beforePreInput = exg.tempFilterInputBuffer[1];
-	float output;
-	float preOutput = exg.tempFilterOutputBuffer[0];
-	float beforePreOutput = exg.tempFilterOutputBuffer[1];
-	// LPF: Fs=100sps, Fc=30Hz, Order=2
-	output= -0.3695 * preOutput - 0.1958 * beforePreOutput + 0.3913 * input + 0.7827 * preInput + 0.3913 * beforePreInput;
-	beforePreInput = preInput;
-	preInput = input;
-	beforePreOutput = preOutput;
-	preOutput= output;
-	exg.tempFilterInputBuffer[0] = preInput;
-	exg.tempFilterInputBuffer[1] = beforePreInput;
-	exg.tempFilterOutputBuffer[0] = preOutput;
-	exg.tempFilterOutputBuffer[1] = beforePreOutput;
-	exg.filteredSample = output;
-}
-/*-----------------------------------------------------------*/
-void EMG_Filter()
-{
-	float input1 = exg.analogSample;
-	float preInput1 = exg.tempFilterInputBuffer[0];
-	float beforePreInput1 = exg.tempFilterInputBuffer[1];
-	float output1;
-	float preOutput1 = exg.tempFilterOutputBuffer[0];
-	float beforePreOutput1 = exg.tempFilterOutputBuffer[1];
-	// LPF: Fs=500sps, Fc=150Hz, Order=2
-	output1= -0.3695 * preOutput1 - 0.1958 * beforePreOutput1 + 0.3913 * input1 + 0.7827 * preInput1 + 0.3913 * beforePreInput1;
-	beforePreInput1 = preInput1;
-	preInput1 = input1;
-	beforePreOutput1 = preOutput1;
-	preOutput1= output1;
-	exg.tempFilterInputBuffer[0] = preInput1;
-	exg.tempFilterInputBuffer[1] = beforePreInput1;
-	exg.tempFilterOutputBuffer[0] = preOutput1;
-	exg.tempFilterOutputBuffer[1] = beforePreOutput1;
-
-	float input2 = output1;
-	float preInput2 = exg.tempFilterInputBuffer[2];
-	float beforePreInput2 = exg.tempFilterInputBuffer[3];
-	float output2;
-	float preOutput2 = exg.tempFilterOutputBuffer[2];
-	float beforePreOutput2 = exg.tempFilterOutputBuffer[3];
-	// HPF: Fs=500sps, Fc=20Hz, Order=2
-	output2= 1.6475 * preOutput2 - 0.7009 * beforePreOutput2 + 0.8371 * input2 - 1.6742 * preInput2 + 0.8371 * beforePreInput2;
-	beforePreInput2 = preInput2;
-	preInput2 = input2;
-	beforePreOutput2 = preOutput2;
-	preOutput2= output2;
-	exg.tempFilterInputBuffer[2] = preInput2;
-	exg.tempFilterInputBuffer[3] = beforePreInput2;
-	exg.tempFilterOutputBuffer[2] = preOutput2;
-	exg.tempFilterOutputBuffer[3] = beforePreOutput2;
-	exg.filteredSample = output2;
-}
-/*-----------------------------------------------------------*/
-void ECG_BaselineFilter()
-{
-	float input = exg.filteredSample;
-	float preInput = exg.tempFilterInputBuffer[4];
-	float output;
-	float preOutput = exg.tempFilterOutputBuffer[4];
-
-	// HPF: Fs=120sps, Fc=7Hz, Order=1
-	output= 0.6873 * preOutput + 0.8436 * input - 0.8436 * preInput;
-	preInput = input;
-	preOutput= output;
-	exg.tempFilterInputBuffer[4] = preInput;
-	exg.tempFilterOutputBuffer[4] = preOutput;
-	exg.ECGBaselineFilteredSample = output;
-}
-/*-----------------------------------------------------------*/
-void ECG_HeartRateCalculation()
-{
-	float input = exg.ECGBaselineFilteredSample;
-	uint16_t period;
-	float HR;
-	float heartRateSum = 0;
-	if (input >= ECG_THRESHOLD && exg.heartRateLock == 0)
-	{
-		exg.heartRateLock = 1;
-		period = HAL_GetTick() - exg.HRCalculationLastTick;    // find time between tow beats in msec.
-		HR = 60000.0 / (float)period;
-		if(HR >= HEART_RATE_MIN && HR <= HEART_RATE_MAX)
-		{
-			// if relative change between current HR and old HR within specific range, send HR else ignore sending current value (there is noise)
-			if ((HR >= 0.8 * exg.previousHeartRate) && (HR <= 1.2 * exg.previousHeartRate))
-				{
-				exg.heartRateArray[exg.heartRateIndex ++] = HR;
-					if(exg.heartRateIndex == HEART_RATE_ARRAY_SIZE)
-					{
-						exg.heartRateIndex = 0;
-						for (uint8_t i=0; i<HEART_RATE_ARRAY_SIZE; i++)
-							heartRateSum += exg.heartRateArray[i];
-						exg.heartRate = roundf (heartRateSum / HEART_RATE_ARRAY_SIZE);
-					}
-				}
-		}
-		else
-		{
-			HR = 0;
-			exg.heartRate = HR;
-			exg.heartRateIndex = 0;  // empty heartRateArray when happening wrong heart rate
-		}
-		exg.previousHeartRate = HR;
-		exg.HRCalculationLastTick = HAL_GetTick();
-	}
-	else if(input < ECG_THRESHOLD)
-		exg.heartRateLock = 0;
-}
-/*-----------------------------------------------------------*/
-void EOG_EnvelopeDetection()
-{
-	float input = exg.EMGRectifiedSample;
-	uint8_t index = exg.windowBufferIndex;
-	float lastSampleInWindow = exg.movingWindowBuffer[index];
-	float sum = exg.sumOfSamplesValuesInWindow;
-	float movingMean;
-	sum = sum - lastSampleInWindow;
-	sum = sum + input;  // new sample get into window
-	exg.movingWindowBuffer[index] = input;
-	index ++;
-	if (index == EMG_MOVING_WINDOW) // circular buffer
-		index = 0;
-	movingMean = (sum / EMG_MOVING_WINDOW) * EMG_EVELOPE_GAIN_FACTOR;
-	exg.sumOfSamplesValuesInWindow = sum;
-	exg.EMGEnvelopeSample = movingMean;
-	exg.windowBufferIndex = index;
-}
-/*-----------------------------------------------------------*/
-void EMG_Rectifying()
-{
-	float input = exg.filteredSample;
-	float absInput = input;
-	if (input < 0.0)
-		absInput = - input;
-	exg.EMGRectifiedSample = absInput;
-}
-/*-----------------------------------------------------------*/
-void EMG_EnvelopeDetection()
-{
-	float input = exg.EMGRectifiedSample;
-	uint8_t index = exg.windowBufferIndex;
-	float lastSampleInWindow = exg.movingWindowBuffer[index];
-	float sum = exg.sumOfSamplesValuesInWindow;
-	float movingMean;
-	sum = sum - lastSampleInWindow;
-	sum = sum + input;  // new sample get into window
-	exg.movingWindowBuffer[index] = input;
-	index ++;
-	if (index == EMG_MOVING_WINDOW) // circular buffer
-		index = 0;
-	movingMean = (sum / EMG_MOVING_WINDOW) * EMG_EVELOPE_GAIN_FACTOR;
-	exg.sumOfSamplesValuesInWindow = sum;
-	exg.EMGEnvelopeSample = movingMean;
-	exg.windowBufferIndex = index;
-}
-/*-----------------------------------------------------------*/
-void EMG_PulseDetection()
-{
-	float input = exg.EMGEnvelopeSample;
-	float EMGPulseThreshold = exg.EMGPulseDetectionThreshold;
-	if (input >= EMGPulseThreshold &&  exg.EMGPulseDetectionLock == 0) // detecting rising edge of pulse
-	{
-		exg.EMGPulseRisingEdgeTick = HAL_GetTick();
-		exg.EMGPulseDetectionLock = 1;
-	}
-	else if (input < EMGPulseThreshold &&  exg.EMGPulseDetectionLock == 1) // detecting falling edge of pulse
-	{
-
-		uint16_t EMGPulseTime = HAL_GetTick() - exg.EMGPulseRisingEdgeTick;
-		if (EMGPulseTime > EMG_NOISY_PULSE_PERIOD_MS)
-		{
-			exg.EMGPulseDurationMsec = EMGPulseTime;
-			exg.EMGPulseDetectionFlag = 1;
-		}
-		exg.EMGPulseDetectionLock = 0;
-	}
-}
-/*-----------------------------------------------------------*/
-void EyeBlinkDetection()
-{
-	float input = exg.filteredSample;
-
-	if (input >= EOG_BLINK_MAX_THRESHOLD   &&  exg.EOGPositivePulseDetectionLock == 0) // detecting rising edge (start) of positive pulse
-			exg.EOGPositivePulseDetectionLock = 1;
-	else if (input < (EOG_BLINK_MAX_THRESHOLD - SHMITH_SHIFT)  &&  exg.EOGPositivePulseDetectionLock == 1) // detecting falling edge (finish) of positive pulse
-	{
-		exg.EOGPositivePulseDetectionLock = 0;
-		exg.EOGPositivePulseDetectionTick = HAL_GetTick();
-		exg.EOGPositivePulseDetectionFlag = 1;
-		if(exg.EOGNegativePulseDetectionFlag == 1)
-		{
-			if(exg.EOGPositivePulseDetectionTick - exg.EOGNegativePulseDetectionTick < EOG_ONE_BLINK_PERIOD_MS)
-				{
-					exg.eyeBlinkStatus = LEFT_BLINK;
-					exg.EOGNegativePulseDetectionFlag = 0;
-					exg.EOGPositivePulseDetectionFlag = 0;
-				}
-			else exg.EOGNegativePulseDetectionFlag = 0;
-		}
-	}
-	else if (input <= EOG_BLINK_MIN_THRESHOLD  &&  exg.EOGNegativePulseDetectionLock == 0) //detecting falling edge (start) of negative pulse
-		exg.EOGNegativePulseDetectionLock = 1;
-	else if (input > (EOG_BLINK_MIN_THRESHOLD + SHMITH_SHIFT)  &&  exg.EOGNegativePulseDetectionLock == 1 ) //detecting rising edge (finish) of negative pulse
-	{
-		exg.EOGNegativePulseDetectionLock = 0;
-		exg.EOGNegativePulseDetectionTick = HAL_GetTick();
-		exg.EOGNegativePulseDetectionFlag = 1;
-		if(exg.EOGPositivePulseDetectionFlag ==1)
-		{
-			if(exg.EOGNegativePulseDetectionTick - exg.EOGPositivePulseDetectionTick < EOG_ONE_BLINK_PERIOD_MS)
-				{
-					exg.eyeBlinkStatus = RIGHT_BLINK;
-					exg.EOGNegativePulseDetectionFlag = 0;
-					exg.EOGPositivePulseDetectionFlag = 0;
-				}
-			else exg.EOGPositivePulseDetectionFlag = 0;
-		}
-	}
-}
-
-
-/*-----------------------------------------------------------*/
-/*  */
-Module_Status EXG_SignalProcessing(void)
-{
-	uint8_t status = H2BR0_OK;
-	LeadsStatus_EXG leadsStatus;
-	InputSignal_EXG inputSignal;
-
-	CheckLeadsStatus(&leadsStatus);
-
-//	if (leadsStatus == LEADP_CONNECTED_LEADN_CONNECTED)
-//	{
-		exg.analogSample = (float)(exg.AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
-		inputSignal = exg.inputSignalType;
-
-		switch (inputSignal)
-		{
-			case ECG:
-				ECG_Filter();
-				ECG_BaselineFilter();
-				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					ECG_HeartRateCalculation();
-				break;
-
-			case EOG:
-				EOG_Filter();
-				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-					EyeBlinkDetection();
-				break;
-
-			case EEG:
-				EEG_Filter();
-				break;
-
-			case EMG:
-				EMG_Filter();
-				if(exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
-				{
-					EMG_Rectifying();
-					EMG_EnvelopeDetection();
-					EMG_PulseDetection();
-				}
-				break;
-
-			default:
-				status = H2BR0_ERR_WRONGPARAMS;
-		}
-//	}
-//	else
-//		status = H2BR0_ERR_LEADS_NOTCONNECTED;
-
-	return status;
-}
-/*-----------------------------------------------------------*/
-uint32_t end_time,start_time ;
-float  Loop_time;
-/* timer2 EXG special timer callback */
-void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef* htim)
-{
-
-
-
-	if(htim->Instance == EXG_TIM)
-	{
-		end_time=HAL_GetTick();
-	    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
- Loop_time=end_time-start_time;
-		SetSamplingFlag();
-
-        vTaskNotifyGiveFromISR(EXGSignalProcessingHandle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-	start_time=HAL_GetTick();
-//		EXG_SignalProcessing();
-	}
-
-}
-
-/* -----------------------------------------------------------------------
- |								  APIs							          |
-/* -----------------------------------------------------------------------
- */
-/*
- * @brief: Initialize the signal type to be measured.
- * @param1: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
- * @retval: status
- */
-Module_Status EXG_Init(InputSignal_EXG inputSignal)
-{
-	uint8_t status = H2BR0_OK;
-
-	EXG_Enable();
-
-	switch (inputSignal)
-	{
-		case ECG:
-			EXG_TIM_PERIOD = ECG_SAMPLE_TIME;
-			exg.inputSignalType = inputSignal;
-			break;
-
-		case EOG:
-			EXG_TIM_PERIOD = EOG_SAMPLE_TIME;
-			exg.inputSignalType = inputSignal;
-			break;
-
-		case EEG:
-			EXG_TIM_PERIOD = EEG_SAMPLE_TIME;
-			exg.inputSignalType = inputSignal;
-			break;
-
-		case EMG:
-			EXG_TIM_PERIOD = EMG_SAMPLE_TIME;
-			exg.inputSignalType = inputSignal;
-			exg.EMGPulseDetectionThreshold = EMG_PULSE_MAX_THRESHOLD;
-			/* so that no pulse detected until adjusting threshold by the user */
-			break;
-
-		default:
-			status = H2BR0_ERR_WRONGPARAMS;
-			break;
-	}
-	Delay_ms(2000);  // avoiding transient state when module is power on
-	HAL_TIM_Base_Start_IT(&HANDLER_Timer_EXG);
-	HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(exg.AdcValue), 1);
-
-	return status;
-}
-
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: Seting the threshold for EMG signal.
- * @param1: threshold value (0 - 100).
- * @retval: status
- */
-Module_Status EMG_SetThreshold(uint8_t threshold)
-{
-	uint8_t status = H2BR0_OK;
-	float voltThreshold;
-
-	if (exg.inputSignalType == EMG)
-	{
-		if (threshold > 100)
-			threshold = 100;	// threshold = [0,100]
-		voltThreshold = ((EMG_PULSE_MAX_THRESHOLD - EMG_PULSE_MIN_THRESHOLD)/ 100.0) * (float)threshold  + EMG_PULSE_MIN_THRESHOLD; // mapping from [0,100] to [EMG_PULSE_MIN_THRESHOLD, EMG_PULSE_MAX_THRESHOLD]
-		exg.EMGPulseDetectionThreshold = voltThreshold;
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: reading the time of how long the EMG signal lasted with the threshold value.
- * @param1: EMGDetectionFlag pointer to a buffer to store value.
- * @param2: EMGDurationMsec pointer to a buffer to store value.
- * @retval: status
- */
-Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec)
-{
-	uint8_t status = H2BR0_OK;
-
-	if (exg.inputSignalType == EMG)
-	{
-		*EMGDetectionFlag = exg.EMGPulseDetectionFlag;
-		if (*EMGDetectionFlag == 1)
-		{
-			*EMGDurationMsec = exg.EMGPulseDurationMsec;
-			exg.EMGPulseDetectionFlag = 0;
-		}
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: reading eye movement state (rapid right or left - up or down) based on electrode placement.
- * @param1: eyeBlinkStatus pointer to a buffer to store value.
- * @retval: status
- */
-Module_Status EOG_CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus)
-{
-	uint8_t status = H2BR0_OK;
-
-	if (exg.inputSignalType == EOG)
-	{
-		*eyeBlinkStatus = exg.eyeBlinkStatus;
-		if (*eyeBlinkStatus != NO_BLINK)
-			exg.eyeBlinkStatus = NO_BLINK;
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: Extracting a normal sample and a filtered sample from the ECG signal.
- * @param1: sample pointer to a buffer to store value.
- * @param2: filteredSample pointer to a buffer to store value.
- * @retval: status
- */
-Module_Status ECG_Sample(float *sample, float *filteredSample )
-{
-	uint8_t status = H2BR0_OK;
-
-	if (exg.inputSignalType == ECG)
-	{
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: Extracting a normal sample and a filtered sample from the EOG signal.
- * @param1: sample pointer to a buffer to store value.
- * @param2: filteredSample pointer to a buffer to store value.
- * @retval: status
- */
-Module_Status EOG_Sample(float *sample, float *filteredSample )
-{
-	uint8_t status = H2BR0_OK;
-
-	if (exg.inputSignalType == EOG)
-	{
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: Extracting a normal sample and a filtered sample from the EEG signal.
- * @param1: sample pointer to a buffer to store value.
- * @param2: filteredSample pointer to a buffer to store value.
- * @retval: status
- */
-Module_Status EEG_Sample(float *sample, float *filteredSample )
-{
-	uint8_t status = H2BR0_OK;
-
-	if (exg.inputSignalType == EEG)
-	{
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: Extracting a normal sample, a filtered sample, a rectified sample, and an envelope sample from the EMG signal.
- * @param1: sample pointer to a buffer to store value.
- * @param2: filteredSample pointer to a buffer to store value.
- * @param3: rectifiedSample pointer to a buffer to store value.
- * @param4: envelopeSample pointer to a buffer to store value.
- * @retval: status
- */
-Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample)
-{
-	uint8_t status = H2BR0_OK;
-
-	if (exg.inputSignalType == EMG)
-	{
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-		*rectifiedSample = exg.EMGRectifiedSample;
-		*envelopeSample =  exg.EMGEnvelopeSample;
-	}
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: reading heart rate from the ECG signal.
- * @param1: heartRate pointer to a buffer to store value
- * @retval: status
- */
-Module_Status ECG_HeartRate(uint8_t *heartRate)
-{
-	uint8_t status = H2BR0_OK;
-
-	if (exg.inputSignalType == ECG)
-		*heartRate = exg.heartRate;
-	else
-		status = H2BR0_ERR_WRONGPARAMS;
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: Sending (normal sample) and (filtered sample) to display on Terminal or draw
- * signals for EMG,EEG,ECG,EOG
- * @param1: The port you want to send from
- * @param2: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
- * @retval: status
- */
-Module_Status PlotToTerminal(uint8_t port)
- {
-	uint8_t status = H2BR0_OK;
-	uint8_t samplingFlag;
-	char sendData[80] = {0};
-
-	if (port == 0)
-		return H2BR0_ERR_WRONGPARAMS;
-
-//    uint32_t startTime = xTaskGetTickCount();
-//    TickType_t xLastWakeTime = startTime;
-
-//    while ((xTaskGetTickCount() - startTime) < pdMS_TO_TICKS(Timeout))
-//    {
-
-		if (exg.inputSignalType == EMG)
-			sprintf(sendData, "Analog:%5.2f | Filtered:%5.2f | Rectified:%5.2f | Envelope:%5.2f\r\n", exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample, exg.EMGEnvelopeSample);
-		else
-			sprintf(sendData, "Analog:%5.2f | Filtered:%5.2f\r\n", exg.analogSample, exg.filteredSample);
-
-		GetSamplingFlag(&samplingFlag);
-
-		if (samplingFlag == 1) {
-			ResetSamplingFlag();
-			writePxMutex(port, sendData, strlen(sendData), cmd50ms, 20);
-//			Send_BOS_Message(port, sendData, strlen(sendData), cmd50ms, 0);
-		}
-//	}
-
-	return status;
-}
-
-/*-----------------------------------------------------------*/
-/*
- * @brief: reading Electrodes status.
- * @param1: leadsStatus pointer to a buffer to store value
- * @retval: status
- */
-Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus)
-{
-	uint8_t status = H2BR0_OK;
-
-	*leadsStatus = exg.statusOfLeads;
-	return status;
-}
-/*-----------------------------------------------------------*/
-/*
- * @brief: send a sample on the required port or send it to another module and
- * graduate the value on the required port.
- * @brief: if the topology file is not activated, therefore The module number is 0
- * @param1: destination module.
- * @param2: port number.
- * @param3: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
- * @retval: status
- */
-Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSignal){
-	float sample=0;
-	float filteredSample=0;
-	float rectifiedSample=0;
-	float envelopeSample=0;
-	static uint8_t temp[16]={0};
-	Module_Status status =H2BR0_OK;
-
-	if (port == 0 && module == myID) {
-		return H2BR0_ERR_WrongParams;
-	}
-	switch (inputSignal){
-	case ECG:
-		status=ECG_Sample(&sample,&filteredSample);
-		if(module == myID)
-		{
-		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		writePxITMutex(port,(char* )&temp[0],8 * sizeof(uint8_t),10);
-		}
-		else
-		{
-			if (H2BR0_OK == status)
-					messageParams[1] = BOS_OK;
-				else
-					messageParams[1] = BOS_ERROR;
-		messageParams[0] =FMT_FLOAT;
-		messageParams[2] =2;
-		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		messageParams[5] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		messageParams[6] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		messageParams[9] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		messageParams[10] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_READ_RESPONSE,(sizeof(float) * 2)+3);
-		}
-		break;
-
-	case EOG:
-		status=EOG_Sample(&sample,&filteredSample);
-		if(module == myID)
-		{
-		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		writePxITMutex(port,(char* )&temp[0],8 * sizeof(uint8_t),10);
-		}
-		else
-		{
-			if (H2BR0_OK == status)
-				messageParams[1] = BOS_OK;
-			else
-				messageParams[1] = BOS_ERROR;
-			messageParams[0] = FMT_FLOAT;
-			messageParams[2] = 2;
-			messageParams[3] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
-			messageParams[4] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
-			messageParams[5] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
-			messageParams[6] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
-			messageParams[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
-			messageParams[8] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
-			messageParams[9] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
-			messageParams[10] =(uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
-			SendMessageToModule(module, CODE_READ_RESPONSE,(sizeof(float) * 2) + 3);
-		}
-		break;
-
-	case EEG:
-		status=EEG_Sample(&sample,&filteredSample);
-		if(module == myID)
-		{
-		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		writePxITMutex(port,(char* )&temp[0],8 * sizeof(uint8_t),10);
-		}
-		else
-		{
-			if (H2BR0_OK == status)
-					messageParams[1] = BOS_OK;
-				else
-					messageParams[1] = BOS_ERROR;
-			messageParams[0] =FMT_FLOAT;
-			messageParams[2] =2;
-			messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-			messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-			messageParams[5] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-			messageParams[6] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-			messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-			messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-			messageParams[9] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-			messageParams[10] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		SendMessageToModule(module,CODE_READ_RESPONSE,(sizeof(float) * 2)+3);
-		}
-		break;
-
-	case EMG:
-		status=EMG_Sample(&sample,&filteredSample,&rectifiedSample,&envelopeSample);
-		if(module == myID)
-		{
-		temp[0] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		temp[1] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		temp[2] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		temp[3] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		temp[4] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		temp[5] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		temp[6] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		temp[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		temp[8] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 0);
-		temp[9] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 8);
-		temp[10] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 16);
-		temp[11] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 24);
-		temp[12] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 0);
-		temp[13] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 8);
-		temp[14] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 16);
-		temp[15] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 24);
-		writePxITMutex(port,(char* )&temp[0],16 * sizeof(uint8_t),10);
-		}
-		else
-		{
-			if (H2BR0_OK == status)
-					messageParams[1] = BOS_OK;
-				else
-					messageParams[1] = BOS_ERROR;
-		messageParams[0] =FMT_FLOAT;
-		messageParams[2] =4;
-		messageParams[3] = (uint8_t)((*(uint32_t *) &sample) >> 0);
-		messageParams[4] = (uint8_t)((*(uint32_t *) &sample) >> 8);
-		messageParams[5] = (uint8_t)((*(uint32_t *) &sample) >> 16);
-		messageParams[6] = (uint8_t)((*(uint32_t *) &sample) >> 24);
-		messageParams[7] = (uint8_t)((*(uint32_t *) &filteredSample) >> 0);
-		messageParams[8] = (uint8_t)((*(uint32_t *) &filteredSample) >> 8);
-		messageParams[9] = (uint8_t)((*(uint32_t *) &filteredSample) >> 16);
-		messageParams[10] = (uint8_t)((*(uint32_t *) &filteredSample) >> 24);
-		messageParams[11] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 0);
-		messageParams[12] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 8);
-		messageParams[13] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 16);
-		messageParams[14] = (uint8_t)((*(uint32_t *) &rectifiedSample) >> 24);
-		messageParams[15] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 0);
-		messageParams[16] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 8);
-		messageParams[17] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 16);
-		messageParams[18] = (uint8_t)((*(uint32_t *) &envelopeSample) >> 24);
-		SendMessageToModule(module,CODE_READ_RESPONSE,19);
-		}
-		break;
-
-	default:
-		status=H2BR0_ERR_WRONGPARAMS;
-		break;
-
-	}
-	memset(&temp[0],0,sizeof(temp));
-
-	    return status;
-}
-/*-----------------------------------------------------------*/
-/*
- * @brief: send a Stream  on the required port or send it to another module and graduate
+/***************************************************************************/
+/****************************** Local Functions ****************************/
+/***************************************************************************/
+/* send a Stream  on the required port or send it to another module and graduate
  * the value on the required port.
  * @brief: if the topology file is not activated, therefore The module number is 0
  * @param1: destination module.
@@ -1581,19 +895,20 @@ Module_Status SampletoPort(uint8_t module,uint8_t port, InputSignal_EXG inputSig
  * @param5: timeout.
  * @retval: status
  */
-//Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
-//{
-//	Module_Status status =H2BR0_OK;
-//	tofMode = STREAM_TO_PORT;
-//	port2 = port;
-//	module2 = module;
-//	Numofsamples2 = Numofsamples;
-//	timeout2 = timeout;
-//	mode2 = inputSignal;
-//	return status;
-//
-//}
-/*-----------------------------------------------------------*/
+Module_Status StreamtoPort(uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+{
+	Module_Status status =H2BR0_OK;
+	tofMode = STREAM_TO_PORT;
+	port2 = port;
+	module2 = module;
+	Numofsamples2 = Numofsamples;
+	timeout2 = timeout;
+	mode2 = inputSignal;
+	return status;
+
+}
+
+/***************************************************************************/
 Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
 {
 	Module_Status status =H2BR0_OK;
@@ -1615,20 +930,22 @@ Module_Status ExportStreanToPort (uint8_t module,uint8_t port,InputSignal_EXG in
 	return status;
 
 }
-/*-----------------------------------------------------------*/
-//Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
-//{
-//	Module_Status status =H2BR0_OK;
-//	tofMode = STREAM_TO_Terminal;
-//	port1 = port;
-//	Numofsamples1 = Numofsamples;
-//	timeout1 = timeout;
-//	mode1 = inputSignal;
-//	return status;
-//
-//}
 
-/*-----------------------------------------------------------*/
+/***************************************************************************/
+Module_Status StreamToTerminal(uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
+{
+	Module_Status status =H2BR0_OK;
+	tofMode = STREAM_TO_Terminal;
+	port1 = port;
+	Numofsamples1 = Numofsamples;
+	timeout1 = timeout;
+	mode1 = inputSignal;
+	return status;
+
+}
+
+
+/***************************************************************************/
 Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,uint32_t Numofsamples,uint32_t timeout)
 {
 	Module_Status status =H2BR0_OK;
@@ -1650,7 +967,131 @@ Module_Status ExportStreanToTerminal (uint8_t port,InputSignal_EXG inputSignal,u
 	return status;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
+/*
+ * @brief: Streams medical sensor data to a buffer.
+ * @param buffer: Pointer to the buffer where data will be stored.
+ * @param Numofsamples: Number of samples to take.
+ * @param timeout: Timeout period for the operation.
+ * @param function: Function pointer to the sampling function (e.g., SampleECGBuf, SampleEMGBuf).
+ * @retval: Module status indicating success or error.
+ */
+static Module_Status StreamToBuf(float *buffer, uint32_t Numofsamples, uint32_t timeout, SampleToBuffer function) {
+    Module_Status status = H2BR0_OK;
+    uint16_t StreamIndex = 0;
+    uint32_t period = timeout / Numofsamples;
+
+    /* Check if the calculated period is valid */
+    if (period < MIN_PERIOD_MS)
+        return H2BR0_ERR_UNKNOWNMESSAGE;
+
+    stopStream = false;
+
+    /* Stream data to buffer */
+    while ((Numofsamples-- > 0) && (timeout < MAX_TIMEOUT_MS)) {
+        if (function == SampleEMGBuf) {
+            float sample[4];
+            function(sample);
+            buffer[StreamIndex] = sample[0];      /* Raw sample */
+            buffer[StreamIndex + 1] = sample[1];  /* Filtered sample */
+            buffer[StreamIndex + 2] = sample[2];  /* Rectified sample */
+            buffer[StreamIndex + 3] = sample[3];  /* Envelope sample */
+            StreamIndex += 4;
+        } else {
+            float sample[2];
+            function(sample);
+            buffer[StreamIndex] = sample[0];      /* Raw sample */
+            buffer[StreamIndex + 1] = sample[1];  /* Filtered sample */
+            StreamIndex += 2;
+        }
+
+        /* Delay for the specified period */
+        vTaskDelay(pdMS_TO_TICKS(period));
+
+        /* Check if streaming should be stopped */
+        if (stopStream) {
+            status = H2BR0_ERR_TERMINATED;
+            break;
+        }
+    }
+
+    return status;
+}
+/***************************************************************************/
+/*
+ * @brief: Streams medical sensor data to a buffer.
+ * @param buffer: Pointer to the buffer where data will be stored.
+ * @param function: Type of data to sample (e.g., ECG, EOG, EEG, EMG).
+ * @param Numofsamples: Number of samples to take.
+ * @param timeout: Timeout period for the operation.
+ * @retval: Module status indicating success or error.
+ */
+Module_Status StreamToBuffer(float *buffer, InputSignal_EXG function, uint32_t Numofsamples, uint32_t timeout) {
+    switch (function) {
+        case ECG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleECGBuf);
+        case EOG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleEOGBuf);
+        case EEG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleEEGBuf);
+        case EMG:
+            return StreamToBuf(buffer, Numofsamples, timeout, SampleEMGBuf);
+        default:
+            return H2BR0_ERR_UNKNOWNMESSAGE;
+    }
+}
+
+/*
+ * @brief: Samples ECG data into a buffer.
+ * @param buffer: Pointer to the buffer where ECG data will be stored.
+ * @retval: None
+ */
+void SampleECGBuf(float *buffer) {
+    float sample, filteredSample;
+    ECG_Sample(&sample, &filteredSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+}
+
+/*
+ * @brief: Samples EOG data into a buffer.
+ * @param buffer: Pointer to the buffer where EOG data will be stored.
+ * @retval: None
+ */
+void SampleEOGBuf(float *buffer) {
+    float sample, filteredSample;
+    EOG_Sample(&sample, &filteredSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+}
+
+/*
+ * @brief: Samples EEG data into a buffer.
+ * @param buffer: Pointer to the buffer where EEG data will be stored.
+ * @retval: None
+ */
+void SampleEEGBuf(float *buffer) {
+    float sample, filteredSample;
+    EEG_Sample(&sample, &filteredSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+}
+
+/*
+ * @brief: Samples EMG data into a buffer.
+ * @param buffer: Pointer to the buffer where EMG data will be stored.
+ * @retval: None
+ */
+void SampleEMGBuf(float *buffer) {
+    float sample, filteredSample, rectifiedSample, envelopeSample;
+    EMG_Sample(&sample, &filteredSample, &rectifiedSample, &envelopeSample);
+    buffer[0] = sample;
+    buffer[1] = filteredSample;
+    buffer[2] = rectifiedSample;
+    buffer[3] = envelopeSample;
+}
+/***************************************************************************/
 static Module_Status PollingSleepCLISafe(uint32_t period, long Numofsamples)
 {
 	const unsigned DELTA_SLEEP_MS = 100; // milliseconds
@@ -1663,8 +1104,8 @@ static Module_Status PollingSleepCLISafe(uint32_t period, long Numofsamples)
 		// Look for ENTER key to stop the stream
 		for (uint8_t chr=1 ; chr<MSG_RX_BUF_SIZE ; chr++)
 		{
-			if (UARTRxBuf[PcPort-1][chr] == '\r') {
-				UARTRxBuf[PcPort-1][chr] = 0;
+			if (UARTRxBuf[pcPort-1][chr] == '\r') {
+				UARTRxBuf[pcPort-1][chr] = 0;
 				flag=1;
 				return H2BR0_ERR_TERMINATED;
 			}
@@ -1677,25 +1118,26 @@ static Module_Status PollingSleepCLISafe(uint32_t period, long Numofsamples)
 	vTaskDelay(pdMS_TO_TICKS(lastDelayMS));
 	return H2BR0_OK;
 }
-/*-----------------------------------------------------------*/
-static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, SampleMemsToString function)
+
+/***************************************************************************/
+static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, SampleToString function)
 {
 	Module_Status status = H2BR0_OK;
 	int8_t *pcOutputString = NULL;
 	uint32_t period = timeout / Numofsamples;
-	if (period < MIN_MEMS_PERIOD_MS)
-		return H2BR0_ERR_WrongParams;
+	if (period < MIN_PERIOD_MS)
+		return H2BR0_ERR_WRONGPARAMS;
 
 	// TODO: Check if CLI is enable or not
 	for (uint8_t chr = 0; chr < MSG_RX_BUF_SIZE; chr++) {
-			if (UARTRxBuf[PcPort - 1][chr] == '\r' ) {
-				UARTRxBuf[PcPort - 1][chr] = 0;
+			if (UARTRxBuf[pcPort - 1][chr] == '\r' ) {
+				UARTRxBuf[pcPort - 1][chr] = 0;
 			}
 		}
 	if (1 == flag) {
 		flag = 0;
 		static char *pcOKMessage = (int8_t*) "Stop stream !\n\r";
-		writePxITMutex(PcPort, pcOKMessage, strlen(pcOKMessage), 10);
+		writePxITMutex(pcPort, pcOKMessage, strlen(pcOKMessage), 10);
 		return status;
 	}
 	if (period > timeout)
@@ -1704,12 +1146,12 @@ static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, Sa
 	long numTimes = timeout / period;
 	stopStream = false;
 
-	while ((numTimes-- > 0) || (timeout >= MAX_MEMS_TIMEOUT_MS)) {
+	while ((numTimes-- > 0) || (timeout >= MAX_TIMEOUT_MS)) {
 		pcOutputString = FreeRTOS_CLIGetOutputBuffer();
 		function((char *)pcOutputString, 100);
 
 
-		writePxMutex(PcPort, (char *)pcOutputString, strlen((char *)pcOutputString), cmd500ms, HAL_MAX_DELAY);
+		writePxMutex(pcPort, (char *)pcOutputString, strlen((char *)pcOutputString), cmd500ms, HAL_MAX_DELAY);
 		if (PollingSleepCLISafe(period,Numofsamples) != H2BR0_OK)
 			break;
 	}
@@ -1718,7 +1160,8 @@ static Module_Status StreamMemsToCLI(uint32_t Numofsamples, uint32_t timeout, Sa
   sprintf((char *)pcOutputString, "\r\n");
 	return status;
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 void SampleEMGToString(char *cstring, size_t maxLen) {
 	float sample, filteredSample, rectifiedSample, envelopeSample;
 	EMG_Sample(&sample, &filteredSample, &rectifiedSample, &envelopeSample);
@@ -1726,28 +1169,32 @@ void SampleEMGToString(char *cstring, size_t maxLen) {
 			"Sample: %.3f | FilteredSample: %.3f | RectifiedSample: %.3f |EnvelopeSample: %.3f \r\n",
 			sample, filteredSample, rectifiedSample, envelopeSample);
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 void SampleEEGToString(char *cstring, size_t maxLen) {
 	float sample, filteredSample;
 	EEG_Sample(&sample, &filteredSample);
 	snprintf(cstring, maxLen, "sample: %.3f filteredSample: %.3f  \r\n", sample,
 			filteredSample);
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 void SampleEOGToString(char *cstring, size_t maxLen) {
 	float sample, filteredSample;
 	EOG_Sample(&sample, &filteredSample);
 	snprintf(cstring, maxLen, "sample: %.3f filteredSample: %.3f  \r\n", sample,
 			filteredSample);
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 void SampleECGToString(char *cstring, size_t maxLen) {
 	float sample, filteredSample;
 	ECG_Sample(&sample, &filteredSample);
 	snprintf(cstring, maxLen, "sample: %.3f filteredSample: %.3f  \r\n", sample,
 			filteredSample);
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 Module_Status StreamToCLI(uint32_t Numofsamples, uint32_t timeout,
 		InputSignal_EXG inputSignal) {
 
@@ -1770,16 +1217,857 @@ Module_Status StreamToCLI(uint32_t Numofsamples, uint32_t timeout,
 
 }
 
-/*-----------------------------------------------------------*/
+/***************************************************************************/
+/* */
+void EXGSignalProcessing(void *argument) {
 
-/* -----------------------------------------------------------------------
- |								Commands							      |
-   -----------------------------------------------------------------------
+	for (;;) {
+		// Wait for ISR notification
+		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+		// Process EXG Signal
+		EXG_SignalProcessing();
+	}
+
+}
+
+/***************************************************************************/
+void EXG_Enable() {
+	HAL_GPIO_WritePin(SDN_EXG_GPIO_PORT, SDN_EXG_PIN, GPIO_PIN_SET);
+	exg.EXGStatus = EXG_ENABLED;
+}
+
+/***************************************************************************/
+void EXG_Disable() {
+	HAL_GPIO_WritePin(SDN_EXG_GPIO_PORT, SDN_EXG_PIN, GPIO_PIN_RESET);
+	exg.EXGStatus = EXG_DISABLED;
+}
+
+/***************************************************************************/
+void EXG_Reset() {
+	EXG_Disable();
+	HAL_Delay(10);
+	EXG_Enable();
+}
+
+/***************************************************************************/
+void GetSamplingFlag(uint8_t *samplingFlag) {
+	*samplingFlag = exg.samplingFlag;
+}
+
+/***************************************************************************/
+void ResetSamplingFlag() {
+	exg.samplingFlag = 0;
+}
+
+/***************************************************************************/
+void SetSamplingFlag() {
+	exg.samplingFlag = 1;
+}
+
+/***************************************************************************/
+void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus) {
+	GPIO_PinState LODPStatus;
+	GPIO_PinState LODNStatus;
+
+	LODPStatus = HAL_GPIO_ReadPin(LODP_EXG_GPIO_PORT, LODP_EXG_PIN);
+	LODNStatus = HAL_GPIO_ReadPin(LODN_EXG_GPIO_PORT, LODN_EXG_PIN);
+
+	if (LODPStatus == GPIO_PIN_RESET && LODNStatus == GPIO_PIN_RESET)
+		*leadsStatus = LEADP_CONNECTED_LEADN_CONNECTED;
+	else if (LODPStatus == GPIO_PIN_RESET && LODNStatus == GPIO_PIN_SET)
+		*leadsStatus = LEADP_CONNECTED_LEADN_NOTCONNECTED;
+	else if (LODPStatus == GPIO_PIN_SET && LODNStatus == GPIO_PIN_RESET)
+		*leadsStatus = LEADP_NOTCONNECTED_LEADN_CONNECTED;
+	else
+		*leadsStatus = LEADP_NOTCONNECTED_LEADN_NOTCONNECTED;
+
+	exg.statusOfLeads = *leadsStatus;
+}
+
+/***************************************************************************/
+void ECG_Filter() {
+	float input1 = exg.analogSample;
+	float preInput1 = exg.tempFilterInputBuffer[0];
+	float beforePreInput1 = exg.tempFilterInputBuffer[1];
+	float output1;
+	float preOutput1 = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput1 = exg.tempFilterOutputBuffer[1];
+
+	// LPF: Fs=120sps, Fc=40Hz, Order=2
+	output1 = -0.6202 * preOutput1 - 0.2404 * beforePreOutput1 + 0.4652 * input1
+			+ 0.9303 * preInput1 + 0.4652 * beforePreInput1;
+	beforePreInput1 = preInput1;
+	preInput1 = input1;
+	beforePreOutput1 = preOutput1;
+	preOutput1 = output1;
+
+	exg.tempFilterInputBuffer[0] = preInput1;
+	exg.tempFilterInputBuffer[1] = beforePreInput1;
+	exg.tempFilterOutputBuffer[0] = preOutput1;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput1;
+
+	float input2 = output1;
+	float preInput2 = exg.tempFilterInputBuffer[2];
+	float beforePreInput2 = exg.tempFilterInputBuffer[3];
+	float output2;
+	float preOutput2 = exg.tempFilterOutputBuffer[2];
+	float beforePreOutput2 = exg.tempFilterOutputBuffer[3];
+
+	// LPF: Fs=120sps, Fc=40Hz, Order=2
+	output2 = -0.6202 * preOutput2 - 0.2404 * beforePreOutput2 + 0.4652 * input2
+			+ 0.9303 * preInput2 + 0.4652 * beforePreInput2;
+	beforePreInput2 = preInput2;
+	preInput2 = input2;
+	beforePreOutput2 = preOutput2;
+	preOutput2 = output2;
+
+	exg.tempFilterInputBuffer[2] = preInput2;
+	exg.tempFilterInputBuffer[3] = beforePreInput2;
+	exg.tempFilterOutputBuffer[2] = preOutput2;
+	exg.tempFilterOutputBuffer[3] = beforePreOutput2;
+	exg.filteredSample = output2;
+}
+
+/***************************************************************************/
+void EOG_Filter() {
+	float input = exg.analogSample;
+	float preInput = exg.tempFilterInputBuffer[0];
+	float beforePreInput = exg.tempFilterInputBuffer[1];
+	float output;
+	float preOutput = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput = exg.tempFilterOutputBuffer[1];
+
+	// LPF: Fs=100sps, Fc=25Hz, Order=2
+	output = -0.0 * preOutput - 0.1716 * beforePreOutput + 0.2929 * input
+			+ 0.5858 * preInput + 0.2929 * beforePreInput;
+	beforePreInput = preInput;
+	preInput = input;
+	beforePreOutput = preOutput;
+	preOutput = output;
+
+	exg.tempFilterInputBuffer[0] = preInput;
+	exg.tempFilterInputBuffer[1] = beforePreInput;
+	exg.tempFilterOutputBuffer[0] = preOutput;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput;
+	exg.filteredSample = output;
+}
+
+/***************************************************************************/
+void EEG_Filter() {
+	float input = exg.analogSample;
+	float preInput = exg.tempFilterInputBuffer[0];
+	float beforePreInput = exg.tempFilterInputBuffer[1];
+	float output;
+	float preOutput = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput = exg.tempFilterOutputBuffer[1];
+
+	// LPF: Fs=100sps, Fc=30Hz, Order=2
+	output = -0.3695 * preOutput - 0.1958 * beforePreOutput + 0.3913 * input
+			+ 0.7827 * preInput + 0.3913 * beforePreInput;
+	beforePreInput = preInput;
+	preInput = input;
+	beforePreOutput = preOutput;
+	preOutput = output;
+
+	exg.tempFilterInputBuffer[0] = preInput;
+	exg.tempFilterInputBuffer[1] = beforePreInput;
+	exg.tempFilterOutputBuffer[0] = preOutput;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput;
+	exg.filteredSample = output;
+}
+
+/***************************************************************************/
+void EMG_Filter() {
+	float input1 = exg.analogSample;
+	float preInput1 = exg.tempFilterInputBuffer[0];
+	float beforePreInput1 = exg.tempFilterInputBuffer[1];
+	float output1;
+	float preOutput1 = exg.tempFilterOutputBuffer[0];
+	float beforePreOutput1 = exg.tempFilterOutputBuffer[1];
+
+	// LPF: Fs=500sps, Fc=150Hz, Order=2
+	output1 = -0.3695 * preOutput1 - 0.1958 * beforePreOutput1 + 0.3913 * input1
+			+ 0.7827 * preInput1 + 0.3913 * beforePreInput1;
+	beforePreInput1 = preInput1;
+	preInput1 = input1;
+	beforePreOutput1 = preOutput1;
+	preOutput1 = output1;
+
+	exg.tempFilterInputBuffer[0] = preInput1;
+	exg.tempFilterInputBuffer[1] = beforePreInput1;
+	exg.tempFilterOutputBuffer[0] = preOutput1;
+	exg.tempFilterOutputBuffer[1] = beforePreOutput1;
+
+	float input2 = output1;
+	float preInput2 = exg.tempFilterInputBuffer[2];
+	float beforePreInput2 = exg.tempFilterInputBuffer[3];
+	float output2;
+	float preOutput2 = exg.tempFilterOutputBuffer[2];
+	float beforePreOutput2 = exg.tempFilterOutputBuffer[3];
+
+	// HPF: Fs=500sps, Fc=20Hz, Order=2
+	output2 = 1.6475 * preOutput2 - 0.7009 * beforePreOutput2 + 0.8371 * input2
+			- 1.6742 * preInput2 + 0.8371 * beforePreInput2;
+	beforePreInput2 = preInput2;
+	preInput2 = input2;
+	beforePreOutput2 = preOutput2;
+	preOutput2 = output2;
+	exg.tempFilterInputBuffer[2] = preInput2;
+	exg.tempFilterInputBuffer[3] = beforePreInput2;
+	exg.tempFilterOutputBuffer[2] = preOutput2;
+	exg.tempFilterOutputBuffer[3] = beforePreOutput2;
+	exg.filteredSample = output2;
+}
+
+/***************************************************************************/
+void ECG_BaselineFilter() {
+	float input = exg.filteredSample;
+	float preInput = exg.tempFilterInputBuffer[4];
+	float output;
+	float preOutput = exg.tempFilterOutputBuffer[4];
+
+	// HPF: Fs=120sps, Fc=7Hz, Order=1
+	output = 0.6873 * preOutput + 0.8436 * input - 0.8436 * preInput;
+	preInput = input;
+	preOutput = output;
+	exg.tempFilterInputBuffer[4] = preInput;
+	exg.tempFilterOutputBuffer[4] = preOutput;
+	exg.ECGBaselineFilteredSample = output;
+}
+
+/***************************************************************************/
+void ECG_HeartRateCalculation() {
+	uint16_t period;
+	float HR;
+	float input = exg.ECGBaselineFilteredSample;
+	float heartRateSum = 0;
+
+	if (input >= ECG_THRESHOLD && exg.heartRateLock == 0) {
+		exg.heartRateLock = 1;
+		period = HAL_GetTick() - exg.HRCalculationLastTick; // find time between tow beats in msec.
+		HR = 60000.0 / (float) period;
+		if (HR >= HEART_RATE_MIN && HR <= HEART_RATE_MAX) {
+			// if relative change between current HR and old HR within specific range, send HR else ignore sending current value (there is noise)
+			if ((HR >= 0.8 * exg.previousHeartRate)
+					&& (HR <= 1.2 * exg.previousHeartRate)) {
+				exg.heartRateArray[exg.heartRateIndex++] = HR;
+				if (exg.heartRateIndex == HEART_RATE_ARRAY_SIZE) {
+					exg.heartRateIndex = 0;
+					for (uint8_t i = 0; i < HEART_RATE_ARRAY_SIZE; i++)
+						heartRateSum += exg.heartRateArray[i];
+					exg.heartRate = roundf(
+							heartRateSum / HEART_RATE_ARRAY_SIZE);
+				}
+			}
+		} else {
+			HR = 0;
+			exg.heartRate = HR;
+			exg.heartRateIndex = 0; // empty heartRateArray when happening wrong heart rate
+		}
+		exg.previousHeartRate = HR;
+		exg.HRCalculationLastTick = HAL_GetTick();
+	} else if (input < ECG_THRESHOLD)
+		exg.heartRateLock = 0;
+}
+
+/***************************************************************************/
+void EOG_EnvelopeDetection() {
+	float input = exg.EMGRectifiedSample;
+	uint8_t index = exg.windowBufferIndex;
+	float lastSampleInWindow = exg.movingWindowBuffer[index];
+	float sum = exg.sumOfSamplesValuesInWindow;
+	float movingMean;
+
+	sum = sum - lastSampleInWindow;
+	sum = sum + input;  // new sample get into window
+	exg.movingWindowBuffer[index] = input;
+	index++;
+	if (index == EMG_MOVING_WINDOW) // circular buffer
+		index = 0;
+	movingMean = (sum / EMG_MOVING_WINDOW) * EMG_EVELOPE_GAIN_FACTOR;
+
+	exg.sumOfSamplesValuesInWindow = sum;
+	exg.EMGEnvelopeSample = movingMean;
+	exg.windowBufferIndex = index;
+}
+
+/***************************************************************************/
+void EMG_Rectifying() {
+	float input = exg.filteredSample;
+	float absInput = input;
+
+	if (input < 0.0)
+		absInput = -input;
+	exg.EMGRectifiedSample = absInput;
+}
+
+/***************************************************************************/
+void EMG_EnvelopeDetection() {
+	float input = exg.EMGRectifiedSample;
+	uint8_t index = exg.windowBufferIndex;
+	float lastSampleInWindow = exg.movingWindowBuffer[index];
+	float sum = exg.sumOfSamplesValuesInWindow;
+	float movingMean;
+
+	sum = sum - lastSampleInWindow;
+	sum = sum + input;  // new sample get into window
+	exg.movingWindowBuffer[index] = input;
+	index++;
+	if (index == EMG_MOVING_WINDOW) // circular buffer
+		index = 0;
+	movingMean = (sum / EMG_MOVING_WINDOW) * EMG_EVELOPE_GAIN_FACTOR;
+
+	exg.sumOfSamplesValuesInWindow = sum;
+	exg.EMGEnvelopeSample = movingMean;
+	exg.windowBufferIndex = index;
+}
+
+/***************************************************************************/
+void EMG_PulseDetection() {
+	float input = exg.EMGEnvelopeSample;
+	float EMGPulseThreshold = exg.EMGPulseDetectionThreshold;
+
+	/* detecting rising edge of pulse */
+	if (input >= EMGPulseThreshold && exg.EMGPulseDetectionLock == 0) {
+		exg.EMGPulseRisingEdgeTick = HAL_GetTick();
+		exg.EMGPulseDetectionLock = 1;
+	}
+	/* detecting falling edge of pulse */
+	else if (input < EMGPulseThreshold && exg.EMGPulseDetectionLock == 1) {
+
+		uint16_t EMGPulseTime = HAL_GetTick() - exg.EMGPulseRisingEdgeTick;
+		if (EMGPulseTime > EMG_NOISY_PULSE_PERIOD_MS) {
+			exg.EMGPulseDurationMsec = EMGPulseTime;
+			exg.EMGPulseDetectionFlag = 1;
+		}
+		exg.EMGPulseDetectionLock = 0;
+	}
+}
+
+/***************************************************************************/
+void EyeBlinkDetection() {
+	float input = exg.filteredSample;
+
+	/* detecting rising edge (start) of positive pulse */
+	if (input >= EOG_BLINK_MAX_THRESHOLD && exg.EOGPositivePulseDetectionLock == 0)
+		exg.EOGPositivePulseDetectionLock = 1;
+
+	/* detecting falling edge (finish) of positive pulse */
+	else if (input < (EOG_BLINK_MAX_THRESHOLD - SHMITH_SHIFT) && exg.EOGPositivePulseDetectionLock == 1) {
+		exg.EOGPositivePulseDetectionLock = 0;
+		exg.EOGPositivePulseDetectionTick = HAL_GetTick();
+		exg.EOGPositivePulseDetectionFlag = 1;
+
+		if (exg.EOGNegativePulseDetectionFlag == 1) {
+			if (exg.EOGPositivePulseDetectionTick - exg.EOGNegativePulseDetectionTick< EOG_ONE_BLINK_PERIOD_MS) {
+				exg.eyeBlinkStatus = LEFT_BLINK;
+				exg.EOGNegativePulseDetectionFlag = 0;
+				exg.EOGPositivePulseDetectionFlag = 0;
+			} else
+				exg.EOGNegativePulseDetectionFlag = 0;
+		}
+	} /* detecting falling edge (start) of negative pulse */
+	else if (input <= EOG_BLINK_MIN_THRESHOLD && exg.EOGNegativePulseDetectionLock == 0)
+		exg.EOGNegativePulseDetectionLock = 1;
+	/* detecting rising edge (finish) of negative pulse */
+	else if (input > (EOG_BLINK_MIN_THRESHOLD + SHMITH_SHIFT) && exg.EOGNegativePulseDetectionLock == 1) {
+		exg.EOGNegativePulseDetectionLock = 0;
+		exg.EOGNegativePulseDetectionTick = HAL_GetTick();
+		exg.EOGNegativePulseDetectionFlag = 1;
+		if (exg.EOGPositivePulseDetectionFlag == 1) {
+			if (exg.EOGNegativePulseDetectionTick - exg.EOGPositivePulseDetectionTick< EOG_ONE_BLINK_PERIOD_MS) {
+				exg.eyeBlinkStatus = RIGHT_BLINK;
+				exg.EOGNegativePulseDetectionFlag = 0;
+				exg.EOGPositivePulseDetectionFlag = 0;
+			} else
+				exg.EOGPositivePulseDetectionFlag = 0;
+		}
+	}
+}
+
+/***************************************************************************/
+/*  */
+Module_Status EXG_SignalProcessing(void) {
+	uint8_t status = H2BR0_OK;
+	LeadsStatus_EXG leadsStatus;
+	InputSignal_EXG inputSignal;
+
+	CheckLeadsStatus(&leadsStatus);
+
+	exg.analogSample = (float) (exg.AdcValue) / ADC_NUM_OF_STATES * ADC_VREF; // Convert to analog: 12bit, Vref=3.3V
+	inputSignal = exg.inputSignalType;
+
+	switch (inputSignal) {
+	case ECG:
+		ECG_Filter();
+		ECG_BaselineFilter();
+		if (exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+			ECG_HeartRateCalculation();
+		break;
+
+	case EOG:
+		EOG_Filter();
+		if (exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES)
+			EyeBlinkDetection();
+		break;
+
+	case EEG:
+		EEG_Filter();
+		break;
+
+	case EMG:
+		EMG_Filter();
+		if (exg.sampleCounter++ > FILTER_TRANSIENT_STATE_SAMPLES) {
+			EMG_Rectifying();
+			EMG_EnvelopeDetection();
+			EMG_PulseDetection();
+		}
+		break;
+
+	default:
+		status = H2BR0_ERR_WRONGPARAMS;
+	}
+
+	return status;
+}
+
+/***************************************************************************/
+uint32_t end_time, start_time;
+float Loop_time;
+/* timer2 EXG special timer callback */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == EXG_TIM) {
+		end_time = HAL_GetTick();
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+		Loop_time = end_time - start_time;
+		SetSamplingFlag();
+
+		vTaskNotifyGiveFromISR(EXGSignalProcessingHandle, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		start_time = HAL_GetTick();
+//		EXG_SignalProcessing();
+	}
+}
+
+/***************************************************************************/
+/***************************** General Functions ***************************/
+/***************************************************************************/
+/*
+ * @brief: Initialize the signal type to be measured.
+ * @param1: inputSignal to specify signal type (EMG - ECG - EEG - EOG).
+ * @retval: status
  */
+Module_Status EXG_Init(InputSignal_EXG inputSignal) {
+	uint8_t status = H2BR0_OK;
+
+	EXG_Enable();
+
+	switch (inputSignal) {
+	case ECG:
+		EXG_TIM_PERIOD = ECG_SAMPLE_TIME;
+		exg.inputSignalType = inputSignal;
+		break;
+
+	case EOG:
+		EXG_TIM_PERIOD = EOG_SAMPLE_TIME;
+		exg.inputSignalType = inputSignal;
+		break;
+
+	case EEG:
+		EXG_TIM_PERIOD = EEG_SAMPLE_TIME;
+		exg.inputSignalType = inputSignal;
+		break;
+
+	case EMG:
+		EXG_TIM_PERIOD = EMG_SAMPLE_TIME;
+		exg.inputSignalType = inputSignal;
+		exg.EMGPulseDetectionThreshold = EMG_PULSE_MAX_THRESHOLD;
+		/* so that no pulse detected until adjusting threshold by the user */
+		break;
+
+	default:
+		status = H2BR0_ERR_WRONGPARAMS;
+		break;
+	}
+	Delay_ms(2000); /* avoiding transient state when module is power on */
+
+	HAL_TIM_Base_Start_IT(&HANDLER_Timer_EXG);
+	HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(exg.AdcValue), 1);
+
+	return status;
+}
+
+/***************************************************************************/
+/* Setting the threshold for EMG signal.
+ * threshold: value (0 - 100).
+ */
+Module_Status EMG_SetThreshold(uint8_t threshold) {
+	uint8_t status = H2BR0_OK;
+	float voltThreshold;
+
+	if (exg.inputSignalType == EMG) {
+		if (threshold > 100)
+			threshold = 100;	// threshold = [0,100]
+		voltThreshold = ((EMG_PULSE_MAX_THRESHOLD - EMG_PULSE_MIN_THRESHOLD)
+				/ 100.0) * (float) threshold + EMG_PULSE_MIN_THRESHOLD; // mapping from [0,100] to [EMG_PULSE_MIN_THRESHOLD, EMG_PULSE_MAX_THRESHOLD]
+		exg.EMGPulseDetectionThreshold = voltThreshold;
+	} else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* reading the time of how long the EMG signal lasted with the threshold value.
+ * EMGDetectionFlag: pointer to a buffer to store value.
+ * EMGDurationMsec: pointer to a buffer to store value.
+ */
+Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec) {
+	uint8_t status = H2BR0_OK;
+
+	if (exg.inputSignalType == EMG) {
+		*EMGDetectionFlag = exg.EMGPulseDetectionFlag;
+		if (*EMGDetectionFlag == 1) {
+			*EMGDurationMsec = exg.EMGPulseDurationMsec;
+			exg.EMGPulseDetectionFlag = 0;
+		}
+	} else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* reading eye movement state (rapid right or left - up or down) based on electrode placement.
+ * eyeBlinkStatus: pointer to a buffer to store value.
+ */
+Module_Status EOG_CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus) {
+	uint8_t status = H2BR0_OK;
+
+	if (exg.inputSignalType == EOG) {
+		*eyeBlinkStatus = exg.eyeBlinkStatus;
+		if (*eyeBlinkStatus != NO_BLINK)
+			exg.eyeBlinkStatus = NO_BLINK;
+	} else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* Extracting a normal sample and a filtered sample from the ECG signal.
+ * sample pointer to a buffer to store value.
+ * filteredSample pointer to a buffer to store value.
+ */
+Module_Status ECG_Sample(float *sample, float *filteredSample) {
+	uint8_t status = H2BR0_OK;
+
+	if (exg.inputSignalType == ECG) {
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
+	} else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* Extracting a normal sample and a filtered sample from the EOG signal.
+ * sample: pointer to a buffer to store value.
+ * filteredSample: pointer to a buffer to store value.
+ */
+Module_Status EOG_Sample(float *sample, float *filteredSample) {
+	uint8_t status = H2BR0_OK;
+
+	if (exg.inputSignalType == EOG) {
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
+	} else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* Extracting a normal sample and a filtered sample from the EEG signal.
+ * sample: pointer to a buffer to store value.
+ * filteredSample: pointer to a buffer to store value.
+ */
+Module_Status EEG_Sample(float *sample, float *filteredSample) {
+	uint8_t status = H2BR0_OK;
+
+	if (exg.inputSignalType == EEG) {
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
+	} else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* Extracting a normal sample, a filtered sample, a rectified sample, and an envelope sample from the EMG signal.
+ * sample: pointer to a buffer to store value.
+ * filteredSample: pointer to a buffer to store value.
+ * rectifiedSample: pointer to a buffer to store value.
+ * envelopeSample: pointer to a buffer to store value.
+ */
+Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample) {
+	uint8_t status = H2BR0_OK;
+
+	if (exg.inputSignalType == EMG) {
+		*sample = exg.analogSample;
+		*filteredSample = exg.filteredSample;
+		*rectifiedSample = exg.EMGRectifiedSample;
+		*envelopeSample = exg.EMGEnvelopeSample;
+	} else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* reading heart rate from the ECG signal.
+ * heartRate: pointer to a buffer to store value
+ */
+Module_Status ECG_HeartRate(uint8_t *heartRate) {
+	uint8_t status = H2BR0_OK;
+
+	if (exg.inputSignalType == ECG)
+		*heartRate = exg.heartRate;
+	else
+		status = H2BR0_ERR_WRONGPARAMS;
+
+	return status;
+}
+
+/***************************************************************************/
+/* Sending (normal sample) and (filtered sample) to display on Terminal or draw
+ * signals for EMG,EEG,ECG,EOG
+ * port: The port you want to send from
+ */
+Module_Status PlotToTerminal(uint8_t port) {
+	uint8_t status = H2BR0_OK;
+	uint8_t samplingFlag;
+	char sendData[80] = { 0 };
+
+	if (port == 0)
+		return H2BR0_ERR_WRONGPARAMS;
+
+//    uint32_t startTime = xTaskGetTickCount();
+//    TickType_t xLastWakeTime = startTime;
+
+//    while ((xTaskGetTickCount() - startTime) < pdMS_TO_TICKS(Timeout))
+//    {
+
+	if (exg.inputSignalType == EMG)
+		sprintf(sendData,
+				"Analog:%5.2f | Filtered:%5.2f | Rectified:%5.2f | Envelope:%5.2f\r\n",
+				exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample,
+				exg.EMGEnvelopeSample);
+	else
+		sprintf(sendData, "Analog:%5.2f | Filtered:%5.2f\r\n", exg.analogSample,
+				exg.filteredSample);
+
+	GetSamplingFlag(&samplingFlag);
+
+	if (samplingFlag == 1) {
+		ResetSamplingFlag();
+		writePxMutex(port, sendData, strlen(sendData), cmd50ms, 20);
+//			Send_BOS_Message(port, sendData, strlen(sendData), cmd50ms, 0);
+	}
+//	}
+
+	return status;
+}
+
+/***************************************************************************/
+/* reading Electrodes status.
+ * leadsStatus: pointer to a buffer to store value
+ */
+Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus) {
+	uint8_t status = H2BR0_OK;
+
+	*leadsStatus = exg.statusOfLeads;
+	return status;
+}
+/***************************************************************************/
+/* send a sample on the required port or send it to another module and
+ * graduate the value on the required port.
+ * module: if the topology file is not activated, therefore The module number is 0 destination module.
+ * port: port number.
+ * inputSignal: to specify signal type (EMG - ECG - EEG - EOG).
+ */
+Module_Status SampletoPort(uint8_t module, uint8_t port,
+		InputSignal_EXG inputSignal) {
+	float sample = 0;
+	float filteredSample = 0;
+	float rectifiedSample = 0;
+	float envelopeSample = 0;
+	static uint8_t temp[16] = { 0 };
+	Module_Status status = H2BR0_OK;
+
+	if (port == 0 && module == myID) {
+		return H2BR0_ERR_WRONGPARAMS;
+	}
+	switch (inputSignal) {
+	case ECG:
+		status = ECG_Sample(&sample, &filteredSample);
+		if (module == myID) {
+			temp[0] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			temp[1] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			temp[2] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			temp[3] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			temp[4] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			temp[5] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			temp[6] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			temp[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			writePxITMutex(port, (char*) &temp[0], 8 * sizeof(uint8_t), 10);
+		} else {
+			if (H2BR0_OK == status)
+				MessageParams[1] = BOS_OK;
+			else
+				MessageParams[1] = BOS_ERROR;
+			MessageParams[0] = FMT_FLOAT;
+			MessageParams[2] = 2;
+			MessageParams[3] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			MessageParams[4] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			MessageParams[5] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			MessageParams[6] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			MessageParams[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			MessageParams[8] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			MessageParams[9] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			MessageParams[10] =(uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			SendMessageToModule(module, CODE_READ_RESPONSE,
+					(sizeof(float) * 2) + 3);
+		}
+		break;
+
+	case EOG:
+		status = EOG_Sample(&sample, &filteredSample);
+		if (module == myID) {
+			temp[0] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			temp[1] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			temp[2] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			temp[3] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			temp[4] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			temp[5] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			temp[6] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			temp[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			writePxITMutex(port, (char*) &temp[0], 8 * sizeof(uint8_t), 10);
+		} else {
+			if (H2BR0_OK == status)
+				MessageParams[1] = BOS_OK;
+			else
+				MessageParams[1] = BOS_ERROR;
+
+			MessageParams[0] = FMT_FLOAT;
+			MessageParams[2] = 2;
+			MessageParams[3] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			MessageParams[4] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			MessageParams[5] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			MessageParams[6] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			MessageParams[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			MessageParams[8] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			MessageParams[9] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			MessageParams[10] =(uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			SendMessageToModule(module, CODE_READ_RESPONSE, (sizeof(float) * 2) + 3);
+		}
+		break;
+
+	case EEG:
+		status = EEG_Sample(&sample, &filteredSample);
+		if (module == myID) {
+			temp[0] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			temp[1] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			temp[2] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			temp[3] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			temp[4] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			temp[5] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			temp[6] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			temp[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			writePxITMutex(port, (char*) &temp[0], 8 * sizeof(uint8_t), 10);
+		} else {
+			if (H2BR0_OK == status)
+				MessageParams[1] = BOS_OK;
+			else
+				MessageParams[1] = BOS_ERROR;
+			MessageParams[0] = FMT_FLOAT;
+			MessageParams[2] = 2;
+			MessageParams[3] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			MessageParams[4] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			MessageParams[5] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			MessageParams[6] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			MessageParams[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			MessageParams[8] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			MessageParams[9] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			MessageParams[10] =(uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			SendMessageToModule(module, CODE_READ_RESPONSE, (sizeof(float) * 2) + 3);
+		}
+		break;
+
+	case EMG:
+		status = EMG_Sample(&sample, &filteredSample, &rectifiedSample, &envelopeSample);
+		if (module == myID) {
+			temp[0] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			temp[1] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			temp[2] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			temp[3] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			temp[4] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			temp[5] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			temp[6] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			temp[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			temp[8] = (uint8_t) ((*(uint32_t*) &rectifiedSample) >> 0);
+			temp[9] = (uint8_t) ((*(uint32_t*) &rectifiedSample) >> 8);
+			temp[10] = (uint8_t) ((*(uint32_t*) &rectifiedSample) >> 16);
+			temp[11] = (uint8_t) ((*(uint32_t*) &rectifiedSample) >> 24);
+			temp[12] = (uint8_t) ((*(uint32_t*) &envelopeSample) >> 0);
+			temp[13] = (uint8_t) ((*(uint32_t*) &envelopeSample) >> 8);
+			temp[14] = (uint8_t) ((*(uint32_t*) &envelopeSample) >> 16);
+			temp[15] = (uint8_t) ((*(uint32_t*) &envelopeSample) >> 24);
+			writePxITMutex(port, (char*) &temp[0], 16 * sizeof(uint8_t), 10);
+		} else {
+			if (H2BR0_OK == status)
+				MessageParams[1] = BOS_OK;
+			else
+				MessageParams[1] = BOS_ERROR;
+			MessageParams[0] = FMT_FLOAT;
+			MessageParams[2] = 4;
+			MessageParams[3] = (uint8_t) ((*(uint32_t*) &sample) >> 0);
+			MessageParams[4] = (uint8_t) ((*(uint32_t*) &sample) >> 8);
+			MessageParams[5] = (uint8_t) ((*(uint32_t*) &sample) >> 16);
+			MessageParams[6] = (uint8_t) ((*(uint32_t*) &sample) >> 24);
+			MessageParams[7] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 0);
+			MessageParams[8] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 8);
+			MessageParams[9] = (uint8_t) ((*(uint32_t*) &filteredSample) >> 16);
+			MessageParams[10] =(uint8_t) ((*(uint32_t*) &filteredSample) >> 24);
+			MessageParams[11] =(uint8_t) ((*(uint32_t*) &rectifiedSample) >> 0);
+			MessageParams[12] =(uint8_t) ((*(uint32_t*) &rectifiedSample) >> 8);
+			MessageParams[13] =(uint8_t) ((*(uint32_t*) &rectifiedSample) >> 16);
+			MessageParams[14] =(uint8_t) ((*(uint32_t*) &rectifiedSample) >> 24);
+			MessageParams[15] = (uint8_t) ((*(uint32_t*) &envelopeSample) >> 0);
+			MessageParams[16] = (uint8_t) ((*(uint32_t*) &envelopeSample) >> 8);
+			MessageParams[17] =(uint8_t) ((*(uint32_t*) &envelopeSample) >> 16);
+			MessageParams[18] =(uint8_t) ((*(uint32_t*) &envelopeSample) >> 24);
+			SendMessageToModule(module, CODE_READ_RESPONSE, 19);
+		}
+		break;
+
+	default:
+		status = H2BR0_ERR_WRONGPARAMS;
+		break;
+
+	}
+	memset(&temp[0], 0, sizeof(temp));
+
+	return status;
+}
 
 
-/*-----------------------------------------------------------*/
-
+/***************************************************************************/
+/********************************* Commands ********************************/
+/***************************************************************************/
 portBASE_TYPE StreamEXGCommand(int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString)
 {
 	const char *const EMGCmdName = "emg";
@@ -1857,8 +2145,7 @@ portBASE_TYPE StreamEXGCommand(int8_t *pcWriteBuffer, size_t xWriteBufferLen, co
 	return pdFALSE;
 }
 
-/*-----------------------------------------------------------*/
-
+/***************************************************************************/
 static bool StreamCommandParser(const int8_t *pcCommandString, const char **ppSensName, portBASE_TYPE *pSensNameLen,
 														bool *pPortOrCLI, uint32_t *pPeriod, uint32_t *pTimeout, uint8_t *pPort, uint8_t *pModule)
 {
@@ -1901,8 +2188,7 @@ static bool StreamCommandParser(const int8_t *pcCommandString, const char **ppSe
 
 	return true;
 }
-/*-----------------------------------------------------------*/
-
+/***************************************************************************/
 portBASE_TYPE CLI_PlotToTerminalCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString )
 {
 	Module_Status result = H2BR0_OK;
@@ -1945,15 +2231,14 @@ portBASE_TYPE CLI_PlotToTerminalCommand( int8_t *pcWriteBuffer, size_t xWriteBuf
 	TickType_t xLastWakeTime = startTime;
 
 	while ((xTaskGetTickCount() - startTime) < pdMS_TO_TICKS(timeout)) {
-		result = PlotToTerminal(PcPort);
+		result = PlotToTerminal(pcPort);
 	}
 
 	return pdFALSE;
 
 }
 
-/*-----------------------------------------------------------*/
-
+/***************************************************************************/
 portBASE_TYPE CLI_ECG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	float sample=0;
@@ -1979,7 +2264,8 @@ portBASE_TYPE CLI_ECG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_EOG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	float sample=0;
@@ -2005,7 +2291,8 @@ portBASE_TYPE CLI_EOG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_EEG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	float sample=0;
@@ -2031,7 +2318,8 @@ portBASE_TYPE CLI_EEG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_EMG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	float sample=0;
@@ -2059,7 +2347,8 @@ portBASE_TYPE CLI_EMG_SampleCommand( int8_t *pcWriteBuffer, size_t xWriteBufferL
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_EMG_SetThresholdCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	int8_t *pcParameterString1;
@@ -2089,7 +2378,8 @@ portBASE_TYPE CLI_EMG_SetThresholdCommand( int8_t *pcWriteBuffer, size_t xWriteB
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_EMG_CheckPulseCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	uint8_t EMGDetectionFlag=0;
@@ -2116,7 +2406,8 @@ portBASE_TYPE CLI_EMG_CheckPulseCommand( int8_t *pcWriteBuffer, size_t xWriteBuf
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_ECG_HeartRateCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	uint8_t heartRate=0;
@@ -2142,7 +2433,8 @@ portBASE_TYPE CLI_ECG_HeartRateCommand( int8_t *pcWriteBuffer, size_t xWriteBuff
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_EOG_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	EyeBlinkingStatus eyeBlinkStatus;
@@ -2171,7 +2463,8 @@ portBASE_TYPE CLI_EOG_CheckEyeBlinkCommand( int8_t *pcWriteBuffer, size_t xWrite
 	return pdFALSE;
 
 }
-/*-----------------------------------------------------------*/
+
+/***************************************************************************/
 portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBufferLen, const int8_t *pcCommandString ){
 	Module_Status status = H2BR0_OK;
 	LeadsStatus_EXG leadsStatus;
@@ -2202,7 +2495,5 @@ portBASE_TYPE CLI_LeadsStatusCommand( int8_t *pcWriteBuffer, size_t xWriteBuffer
 
 }
 
-
-/*-----------------------------------------------------------*/
-
-/************************ (C) COPYRIGHT HEXABITZ *****END OF FILE****/
+/***************************************************************************/
+/***************** (C) COPYRIGHT HEXABITZ ***** END OF FILE ****************/
