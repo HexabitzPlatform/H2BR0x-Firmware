@@ -678,32 +678,32 @@ Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src,
 	uint8_t module;
 
 	switch (code) {
-	case CODE_H2BR0_ECG_Sample:
+	case CODE_H2BR0_ECG_SAMPLE:
 		EXG_Init(ECG);
 		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], ECG);
 		break;
 
-	case CODE_H2BR0_EOG_Sample:
+	case CODE_H2BR0_EOG_SAMPLE:
 		EXG_Init(EOG);
 		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], EOG);
 		break;
 
-	case CODE_H2BR0_EEG_Sample:
+	case CODE_H2BR0_EEG_SAMPLE:
 		EXG_Init(EEG);
 		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], EEG);
 		break;
 
-	case CODE_H2BR0_EMG_Sample:
+	case CODE_H2BR0_EMG_SAMPLE:
 		EXG_Init(EMG);
 		SampletoPort(cMessage[port - 1][shift], cMessage[port - 1][1 + shift], EMG);
 		break;
 
-	case CODE_H2BR0_EMG_SetThreshold:
+	case CODE_H2BR0_EMG_SET_THRESHOLD:
 		EXG_Init(EMG);
 		EMG_SetThreshold(cMessage[port - 1][shift]);
 		break;
 
-	case CODE_H2BR0_EMG_CheckPulse:
+	case CODE_H2BR0_EMG_CHECK_PULSE:
 		module = cMessage[port - 1][shift];
 		port = cMessage[port - 1][1 + shift];
 
@@ -725,7 +725,7 @@ Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src,
 		SendMessageToModule(module, CODE_PORT_FORWARD, 7);
 		break;
 
-	case CODE_H2BR0_ECG_HeartRate:
+	case CODE_H2BR0_ECG_HEART_RATE:
 		module = cMessage[port - 1][shift];
 		port = cMessage[port - 1][1 + shift];
 
@@ -743,12 +743,10 @@ Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src,
 		SendMessageToModule(module, CODE_PORT_FORWARD, 4);
 		break;
 
-	case CODE_H2BR0_EOG_CheckEyeBlink:
-
+	case CODE_H2BR0_EOG_CHECK_EYE_BLINK:
 		break;
 
-	case CODE_H2BR0_LeadsStatus:
-
+	case CODE_H2BR0_LEADS_STATUS:
 		break;
 
 	default:
