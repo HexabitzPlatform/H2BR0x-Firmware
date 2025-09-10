@@ -2,40 +2,43 @@
  BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
 
- File Name     : H2BR0_dma.c
- Description   : source file Contains Peripheral DMA setup .
-
+ File Name  : H2BR0_dma.c
+ Description: Initialize and manage DMA for UART (P1-P6).
+ DMA: Setup, start/stop, mode switching for UART RX (Channels 1-6).
+ CRC8: Compute CRC8 for message validation.
  */
 
 /* Includes ****************************************************************/
 #include "BOS.h"
 
 /* Exported Variables ******************************************************/
-DMA_HandleTypeDef *UARTDMAHandler[6];
+DMA_HandleTypeDef *UARTDMAHandler[5];
 CRC_HandleTypeDef hcrc;
 
 /***************************************************************************/
 /************************ Private function Definitions *********************/
 /***************************************************************************/
 
-void DMA_Init(void){
+void DMA_Init(void) {
 
-/* DMA controller clock enable */
-__DMA1_CLK_ENABLE();
-__DMA2_CLK_ENABLE();
+	/* DMA controller clock enable */
+	__DMA1_CLK_ENABLE()
+	;
+	__DMA2_CLK_ENABLE()
+	;
 
-/* DMA interrupt init */
-/* DMA1_Channel1_IRQn interrupt configuration */
-HAL_NVIC_SetPriority(DMA1_Channel1_IRQn,0,0);
-HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+	/* DMA interrupt init */
+	/* DMA1_Channel1_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
-/* DMA1_Channel2_3_IRQn interrupt configuration */
-HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn,0,0);
-HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
+	/* DMA1_Channel2_3_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 
-/* DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn interrupt configuration */
-HAL_NVIC_SetPriority(DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn,0,0);
-HAL_NVIC_EnableIRQ(DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn);
+	/* DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Ch4_7_DMA2_Ch1_5_DMAMUX1_OVR_IRQn);
 
 }
 

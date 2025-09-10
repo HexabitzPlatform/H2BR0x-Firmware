@@ -2,10 +2,10 @@
  BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
 
- File Name     : H2BR0_gpio.h
- Description   : Header file contains all the functions prototypes for
- the GPIO .
-
+ File Name  : H2BR0_gpio.h
+ Description: Declares functions for GPIO configuration.
+ GPIO: Initialize pins, configure LED, retrieve UART port/pin details.
+ UART: Check P1 TX to last port RX for factory reset.
  */
 
 
@@ -21,7 +21,6 @@
 
 extern void GPIO_Init(void);
 extern void IND_LED_Init(void);
-extern void EXGGPIOInit(void);
 extern uint8_t IsFactoryReset(void);
 extern BOS_Status GetPortGPIOs(uint8_t port,uint32_t *TX_Port,uint16_t *TX_Pin,uint32_t *RX_Port,uint16_t *RX_Pin);
 

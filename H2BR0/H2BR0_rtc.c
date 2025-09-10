@@ -2,9 +2,10 @@
  BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
 
- File Name     : H2BR0_rtc.c
- Description   : Peripheral RTC setup source file.
-
+ File Name  : H2BR0_rtc.c
+ Description: Configures and manages Real-Time Clock (RTC).
+ RTC: Initialize, set/get time/date, 12/24-hour format, backup registers.
+ Boot: Detects power-on or reset boot status.
  */
 
 /* Includes ****************************************************************/
@@ -79,7 +80,7 @@ BOS_Status RTC_CalendarConfig(void){
 	RTC_TimeTypeDef stimestructure;
 	uint8_t month, day, year, seconds, minutes, hours;
 	char comDate[] = __DATE__, comTime[] = __TIME__;
-	
+
 	/* Get compile date */
 	year =atoi(comDate + 9); /* only last 2 digits */
 	*(comDate + 6) =0;
@@ -89,23 +90,23 @@ BOS_Status RTC_CalendarConfig(void){
 		if(!strcmp(comDate,MonthStringAbreviated[i]))
 			month =i + 1;
 	}
-	
+
 	/* Get compile time */
 	seconds =atoi(comTime + 6);
 	*(comDate + 5) =0;
 	minutes =atoi(comTime + 3);
 	*(comDate + 2) =0;
 	hours =atoi(comTime);
-	
+
 	/* Set Date */
 	sdatestructure.Year =year;
 	sdatestructure.Month =month;
 	sdatestructure.Date =day;
 	sdatestructure.WeekDay = RTC_WEEKDAY_MONDAY;
-	
+
 	if(HAL_RTC_SetDate(&RtcHandle,&sdatestructure,RTC_FORMAT_BIN) != HAL_OK)
 		return BOS_ERROR;
-	
+
 	/* Set Time */
 	stimestructure.Hours =hours;
 	stimestructure.Minutes =minutes;
@@ -114,13 +115,13 @@ BOS_Status RTC_CalendarConfig(void){
 	BOS.HourFormat =24;
 	stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
 	stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
-	
+
 	if(HAL_RTC_SetTime(&RtcHandle,&stimestructure,RTC_FORMAT_BIN) != HAL_OK)
 		return BOS_ERROR;
-	
+
 	/* Writes a data in a RTC Backup data Register1 */
 	HAL_RTCEx_BKUPWrite(&RtcHandle,RTC_BKP_DR1,0x32F2);
-	
+
 	return BOS_OK;
 }
 
@@ -129,19 +130,19 @@ BOS_Status RTC_CalendarConfig(void){
 BOS_Status BOS_CalendarConfig(Months_e month,uint8_t monthDay,uint16_t year,Weekdays_e weekDay,uint8_t seconds,uint8_t minutes,uint8_t hours,TimePeriod_e AMPM){
 	RTC_DateTypeDef sdatestructure;
 	RTC_TimeTypeDef stimestructure;
-	
+
 	/* Set Date */
 	sdatestructure.Year =year - 2000;
 	sdatestructure.Month =month;
 	sdatestructure.Date =monthDay;
 	sdatestructure.WeekDay =weekDay;
-	
+
 	/* Set Time */
 	stimestructure.Hours =hours;
 	stimestructure.Minutes =minutes;
 	stimestructure.Seconds =seconds;
 	stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
-	
+
 	if(AMPM == RTC_AM && hours <= 12){
 		HAL_RTCEx_BKUPWrite(&RtcHandle,RTC_BKP_DR0,1);
 		stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
@@ -165,18 +166,18 @@ BOS_Status BOS_CalendarConfig(Months_e month,uint8_t monthDay,uint16_t year,Week
 		RtcHandle.Init.HourFormat = RTC_HOURFORMAT_24;
 		HAL_RTC_Init(&RtcHandle);
 	}
-	
+
 	if(HAL_RTC_SetTime(&RtcHandle,&stimestructure,RTC_FORMAT_BIN) != HAL_OK)
 		return BOS_ERROR;
-	
+
 	if(HAL_RTC_SetDate(&RtcHandle,&sdatestructure,RTC_FORMAT_BIN) != HAL_OK)
 		return BOS_ERROR;
 	/* Save RTC hourformat and daylightsaving to EEPROM */
 	EE_WriteVariable(_EE_PARAMS_RTC,((uint16_t )BOS.HourFormat << 8) | (uint16_t )BOS.Buttons.minInterClickTime);
-	
+
 	/* Writes a data in a RTC Backup data Register1 */
 	HAL_RTCEx_BKUPWrite(&RtcHandle,RTC_BKP_DR1,0x32F2);
-	
+
 	return BOS_OK;
 }
 
@@ -185,10 +186,10 @@ BOS_Status BOS_CalendarConfig(Months_e month,uint8_t monthDay,uint16_t year,Week
 void GetTimeDate(void){
 	RTC_DateTypeDef sdatestructureget;
 	RTC_TimeTypeDef stimestructureget;
-	
+
 	HAL_RTC_GetTime(&RtcHandle,&stimestructureget,RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&RtcHandle,&sdatestructureget,RTC_FORMAT_BIN);
-	
+
 	BOS.Time.AMPM =(stimestructureget.TimeFormat >> 7) + 1;
 	BOS.Time.mSec =stimestructureget.SubSeconds / 2;
 	BOS.Time.Seconds =stimestructureget.Seconds;

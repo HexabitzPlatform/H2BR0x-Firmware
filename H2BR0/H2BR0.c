@@ -22,8 +22,9 @@
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
+UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart5;
-UART_HandleTypeDef huart6;
+//UART_HandleTypeDef huart6;
 
 TIM_HandleTypeDef htim2;  /* EXG special timer */
 
@@ -638,8 +639,9 @@ void Module_Peripheral_Init(void) {
 	MX_USART1_UART_Init();
 	MX_USART2_UART_Init();
 	MX_USART3_UART_Init();
+	MX_USART4_UART_Init();
 	MX_USART5_UART_Init();
-	MX_USART6_UART_Init();
+
 	MX_TIM2_Init();
 	MX_ADC1_Init();
 
@@ -651,9 +653,9 @@ void Module_Peripheral_Init(void) {
 			dmaIndex[i - 1] = &(DMA1_Channel2->CNDTR);
 		} else if (GetUart(i) == &huart3) {
 			dmaIndex[i - 1] = &(DMA1_Channel3->CNDTR);
-		} else if (GetUart(i) == &huart5) {
+		} else if (GetUart(i) == &huart4) {
 			dmaIndex[i - 1] = &(DMA1_Channel4->CNDTR);
-		} else if (GetUart(i) == &huart6) {
+		}else if (GetUart(i) == &huart5) {
 			dmaIndex[i - 1] = &(DMA1_Channel5->CNDTR);
 		}
 	}
@@ -761,13 +763,13 @@ Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src,
 /* Get the port for a given UART */
 uint8_t GetPort(UART_HandleTypeDef *huart){
 
-	if(huart->Instance == USART6)
+	if(huart->Instance == USART3)
 		return P1;
-	else if(huart->Instance == USART2)
-		return P2;
-	else if(huart->Instance == USART3)
-		return P3;
 	else if(huart->Instance == USART1)
+		return P2;
+	else if(huart->Instance == USART4)
+		return P3;
+	else if(huart->Instance == USART2)
 		return P4;
 	else if(huart->Instance == USART5)
 		return P5;

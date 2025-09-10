@@ -2,9 +2,10 @@
  BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
 
- File Name     : H2BR0_inputs.c
- Description   : Source code for Bitz digital and analog inputs.
-
+ File Name  : H2BR0_inputs.c
+ Description: Manages digital and analog inputs.
+ Buttons: Add, remove, detect events (press, release, click, double-click).
+ ADC: Reads analog inputs, temperature, voltage on ports P1, P2.
  */
 
 /* Includes ****************************************************************/
@@ -123,6 +124,7 @@ void Error_Handler(void){
 }
 
 /***************************************************************************/
+/*  Get the ADC_channel Number for a given UART */
 uint32_t GetChannel(UART_HandleTypeDef *huart,ModuleLayer_t side){
 
 	if(huart->Instance == ADC_CH1_USART && side == TOP)
@@ -148,7 +150,6 @@ uint8_t GetRank(uint8_t Port,ModuleLayer_t side){
 		adcChannelRank =3;
 	return adcChannelRank;
 }
-
 
 /***************************************************************************/
 /* BOS Exported Functions **************************************************/
@@ -585,6 +586,7 @@ BOS_Status ReadADCChannel(uint8_t adcPort, ModuleLayer_t side,float *adcVoltage)
 	return Status;
 
 }
+
 /***************************************************************************/
 void ReadTempAndVref(float *temp,float *Vref){
 
@@ -593,6 +595,7 @@ void ReadTempAndVref(float *temp,float *Vref){
 		MX_ADC_Init();
 		adcDeInitFlag = 0;
 	}
+
 
 	/* Enable internal temperature channel */
 	sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;

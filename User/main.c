@@ -23,14 +23,14 @@ int main(void){
 	for(;;){
 	}
 }
-
+float h[100], g[100];
 /***************************************************************************/
 /* User Task */
 void UserTask(void *argument){
-
+	EXG_Init(ECG);
 	/* put your code here, to run repeatedly. */
 	while(1){
-
+		ECG_Sample(h, g);
 	}
 }
 

@@ -45,14 +45,15 @@
 #define _USART1
 #define _USART2
 #define _USART3
+#define _USART4
 #define _USART5
-#define _USART6
+//#define _USART6
 
 /* Port-UART Mapping */
-#define UART_P1 &huart6
-#define UART_P2 &huart2
-#define UART_P3 &huart3
-#define UART_P4 &huart1
+#define UART_P1 &huart3
+#define UART_P2 &huart1
+#define UART_P3 &huart4
+#define UART_P4 &huart2
 #define UART_P5 &huart5
 
 /* Module-specific Hardware Definitions ************************************/
@@ -75,11 +76,17 @@
 #define	USART3_RX_PORT		GPIOB
 #define	USART3_AF			GPIO_AF4_USART3
 
-#define	USART5_TX_PIN		GPIO_PIN_3
-#define	USART5_RX_PIN		GPIO_PIN_2
-#define	USART5_TX_PORT		GPIOD
-#define	USART5_RX_PORT		GPIOD
-#define	USART5_AF			GPIO_AF3_USART5
+#define	USART4_TX_PIN		GPIO_PIN_0
+#define	USART4_RX_PIN		GPIO_PIN_1
+#define	USART4_TX_PORT		GPIOA
+#define	USART4_RX_PORT		GPIOA
+#define	USART4_AF			GPIO_AF4_USART4
+
+#define	USART5_TX_PIN		GPIO_PIN_0
+#define	USART5_RX_PIN		GPIO_PIN_1
+#define	USART5_TX_PORT		GPIOB
+#define	USART5_RX_PORT		GPIOB
+#define	USART5_AF			GPIO_AF8_USART5
 
 #define	USART6_TX_PIN		GPIO_PIN_8
 #define	USART6_RX_PIN		GPIO_PIN_9
@@ -88,16 +95,16 @@
 #define	USART6_AF			GPIO_AF8_USART6
 
 /* GPIO Pin Definition */
-#define SDN_EXG_PIN             GPIO_PIN_6
-#define SDN_EXG_GPIO_PORT       GPIOA
-#define LODP_EXG_PIN            GPIO_PIN_7
-#define LODP_EXG_GPIO_PORT      GPIOA
-#define LODN_EXG_PIN            GPIO_PIN_0
+#define SDN_EXG_PIN             GPIO_PIN_9
+#define SDN_EXG_GPIO_PORT       GPIOB
+#define LODP_EXG_PIN            GPIO_PIN_8
+#define LODP_EXG_GPIO_PORT      GPIOB
+#define LODN_EXG_PIN            GPIO_PIN_7
 #define LODN_EXG_GPIO_PORT      GPIOB
 
 /* ADC Pin Definition */
-#define ADC_INPUT_PIN           GPIO_PIN_4
-#define ADC_INPUT_GPIO_PORT     GPIOA
+#define ADC_INPUT_PIN           GPIO_PIN_12
+#define ADC_INPUT_GPIO_PORT     GPIOB
 
 #define HANDLER_ADC_EXG         hadc1
 
@@ -107,8 +114,8 @@
 #define HANDLER_Timer_EXG       htim2
 
 /* Indicator LED */
-#define _IND_LED_PORT			GPIOB
-#define _IND_LED_PIN			GPIO_PIN_7
+#define _IND_LED_PORT			GPIOA
+#define _IND_LED_PIN			GPIO_PIN_8
 
 /* Module-specific Macro Definitions ***************************************/
 #define ADC_VREF                        3.3  //Volt
@@ -226,15 +233,16 @@ typedef struct{
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart5;
-extern UART_HandleTypeDef huart6;
+//extern UART_HandleTypeDef huart6;
 
 /* Define UART Init prototypes */
 extern void MX_USART1_UART_Init(void);
 extern void MX_USART2_UART_Init(void);
 extern void MX_USART3_UART_Init(void);
+extern void MX_USART4_UART_Init(void);
 extern void MX_USART5_UART_Init(void);
-extern void MX_USART6_UART_Init(void);
 extern void SystemClock_Config(void);
 
 /***************************************************************************/

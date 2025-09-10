@@ -2,9 +2,10 @@
  BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
 
- File Name     : H2BR0_gpio.c
- Description   : Source code provides code for the configuration of all used GPIO pins .
-
+ File Name  : H2BR0_gpio.c
+ Description: Configures GPIO pins and checks factory reset.
+ GPIO: Initialize pins, configure indicator LED, retrieve UART port/pin.
+ UART: Test P1 TX to last port RX for factory reset.
  */
 
 /* Includes ****************************************************************/
@@ -26,33 +27,6 @@ void GPIO_Init(void){
 	IND_LED_Init();
 }
 
-/***************************************************************************/
-/* */
-void EXGGPIOInit(void) {
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(SDN_EXG_GPIO_PORT, SDN_EXG_PIN, GPIO_PIN_SET);
-
-	/*Configure GPIO pin : PA6 */
-	GPIO_InitStruct.Pin = SDN_EXG_PIN;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(SDN_EXG_GPIO_PORT, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : PA7 */
-	GPIO_InitStruct.Pin = LODP_EXG_PIN;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(LODP_EXG_GPIO_PORT, &GPIO_InitStruct);
-
-	/*Configure GPIO pin : PB0 */
-	GPIO_InitStruct.Pin = LODN_EXG_PIN;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(LODN_EXG_GPIO_PORT, &GPIO_InitStruct);
-}
 /***************************************************************************/
 /* Configure indicator LED */
 void IND_LED_Init(void){

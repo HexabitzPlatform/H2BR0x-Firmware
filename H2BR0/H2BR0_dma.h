@@ -1,15 +1,16 @@
 /*
  BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
- 
- File Name     : H2BR0_dma.h
- Description   : Header file contains Peripheral DMA setup.
 
+ File Name  : H2BR0_dma.h
+ Description: Declares functions for DMA and CRC8 operations for UART (P1-P6).
+ DMA: Setup, start/stop, mode switching for UART RX (Channels 1-6).
+ CRC8: Initialization and computation for message validation.
  */
 
 /* Define to prevent recursive inclusion ***********************************/
-#ifndef H0BR4_dma_H
-#define H0BR4_dma_H
+#ifndef H2BR0_dma_H
+#define H2BR0_dma_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -22,7 +23,7 @@
 #define HAL_DMA_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)  ((((__HANDLE__)->ISR & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /* Exported Variables ******************************************************/
-extern DMA_HandleTypeDef *UARTDMAHandler[6];
+extern DMA_HandleTypeDef *UARTDMAHandler[5];
 extern CRC_HandleTypeDef hcrc;
 
 /* External function *******************************************************/
