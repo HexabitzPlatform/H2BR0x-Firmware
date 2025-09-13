@@ -23,14 +23,15 @@ int main(void){
 	for(;;){
 	}
 }
-float h[100], g[100] ,t,y;
+float h[100], g[100] ,t[100],y[100];
 /***************************************************************************/
 /* User Task */
 void UserTask(void *argument){
 	EXG_Init(EMG);
 	/* put your code here, to run repeatedly. */
 	while(1){
-		EMG_Sample(h, g,&t,&y);
+		EMG_Sample(h, g,t,y);
+//		EEG_Sample(y, t);
 	}
 }
 

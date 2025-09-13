@@ -1635,8 +1635,25 @@ Module_Status EXG_SignalProcessing(void) {
 /***************************************************************************/
 uint32_t end_time, start_time;
 float Loop_time;
+uint32_t end_timeq, start_timeq;
+float Loop_timeq;
+int ggm ,yy ,rre, mms,qq ;
 /* timer2 EXG special timer callback */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	ggm--;
+	  yy++;
+	  if (1 == rre) {
+	    start_timeq = HAL_GetTick();
+	    rre = 0;
+	  }
+	  end_timeq = HAL_GetTick();
+	  Loop_timeq = end_timeq - start_timeq;
+	  if (Loop_timeq >= 1000) {
+	    mms = Loop_timeq;
+	    rre = 1;
+	    qq = yy;
+	    yy = 0;
+	  }
 	if (htim->Instance == EXG_TIM) {
 		end_time = HAL_GetTick();
 		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -1646,7 +1663,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		vTaskNotifyGiveFromISR(EXGSignalProcessingHandle, &xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		start_time = HAL_GetTick();
-//		EXG_SignalProcessing();
+		EXG_SignalProcessing();
 	}
 }
 
@@ -1760,16 +1777,28 @@ Module_Status EOG_CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus) {
  * sample pointer to a buffer to store value.
  * filteredSample pointer to a buffer to store value.
  */
+uint16_t ECG_Index = 0;
+#define ECG_BUF_LEN  120
 Module_Status ECG_Sample(float *sample, float *filteredSample) {
-	uint8_t status = H2BR0_OK;
+    uint8_t status = H2BR0_OK;
+    uint8_t samplingFlag;
+    GetSamplingFlag(&samplingFlag);
 
-	if (exg.inputSignalType == ECG) {
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-	} else
-		status = H2BR0_ERR_WRONGPARAMS;
+    if (exg.inputSignalType == ECG && samplingFlag == 1) {
+        sample[ECG_Index] = exg.analogSample;
+        filteredSample[ECG_Index] = exg.filteredSample;
 
-	return status;
+        ECG_Index++;
+        if (ECG_Index >= ECG_BUF_LEN) {
+            ECG_Index = 0;
+        }
+
+        ResetSamplingFlag();
+    } else {
+        status = H2BR0_ERR_WRONGPARAMS;
+    }
+
+    return status;
 }
 
 /***************************************************************************/
@@ -1777,16 +1806,28 @@ Module_Status ECG_Sample(float *sample, float *filteredSample) {
  * sample: pointer to a buffer to store value.
  * filteredSample: pointer to a buffer to store value.
  */
+uint16_t EOG_Index = 0;
+#define EOG_BUF_LEN  100
 Module_Status EOG_Sample(float *sample, float *filteredSample) {
-	uint8_t status = H2BR0_OK;
+    uint8_t status = H2BR0_OK;
+    uint8_t samplingFlag;
+    GetSamplingFlag(&samplingFlag);
 
-	if (exg.inputSignalType == EOG) {
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-	} else
-		status = H2BR0_ERR_WRONGPARAMS;
+    if (exg.inputSignalType == EOG && samplingFlag == 1) {
+        sample[EOG_Index] = exg.analogSample;
+        filteredSample[EOG_Index] = exg.filteredSample;
 
-	return status;
+        EOG_Index++;
+        if (EOG_Index >= EOG_BUF_LEN) {
+            EOG_Index = 0;
+        }
+
+        ResetSamplingFlag();
+    } else {
+        status = H2BR0_ERR_WRONGPARAMS;
+    }
+
+    return status;
 }
 
 /***************************************************************************/
@@ -1794,37 +1835,63 @@ Module_Status EOG_Sample(float *sample, float *filteredSample) {
  * sample: pointer to a buffer to store value.
  * filteredSample: pointer to a buffer to store value.
  */
+uint16_t EEG_Index = 0;
+#define EEG_BUF_LEN  100
 Module_Status EEG_Sample(float *sample, float *filteredSample) {
-	uint8_t status = H2BR0_OK;
+    uint8_t status = H2BR0_OK;
+    uint8_t samplingFlag;
+    GetSamplingFlag(&samplingFlag);
 
-	if (exg.inputSignalType == EEG) {
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-	} else
-		status = H2BR0_ERR_WRONGPARAMS;
+    if (exg.inputSignalType == EEG && samplingFlag == 1) {
+        sample[EEG_Index] = exg.analogSample;
+        filteredSample[EEG_Index] = exg.filteredSample;
 
-	return status;
+        EEG_Index++;
+        if (EEG_Index >= EEG_BUF_LEN) {
+            EEG_Index = 0;
+        }
+
+        ResetSamplingFlag();
+    } else {
+        status = H2BR0_ERR_WRONGPARAMS;
+    }
+
+    return status;
 }
 
 /***************************************************************************/
-/* Extracting a normal sample, a filtered sample, a rectified sample, and an envelope sample from the EMG signal.
+/* Extracting a normal sample, a filtered sample, a rectified sample,
+ * and an envelope sample from the EMG signal.
  * sample: pointer to a buffer to store value.
  * filteredSample: pointer to a buffer to store value.
  * rectifiedSample: pointer to a buffer to store value.
  * envelopeSample: pointer to a buffer to store value.
  */
-Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample) {
-	uint8_t status = H2BR0_OK;
+uint16_t EMG_Index = 0;
+#define EMG_BUF_LEN  500
+Module_Status EMG_Sample(float *sample, float *filteredSample,
+                         float *rectifiedSample, float *envelopeSample) {
+    uint8_t status = H2BR0_OK;
+    uint8_t samplingFlag;
+    GetSamplingFlag(&samplingFlag);
 
-	if (exg.inputSignalType == EMG) {
-		*sample = exg.analogSample;
-		*filteredSample = exg.filteredSample;
-		*rectifiedSample = exg.EMGRectifiedSample;
-		*envelopeSample = exg.EMGEnvelopeSample;
-	} else
-		status = H2BR0_ERR_WRONGPARAMS;
+    if (exg.inputSignalType == EMG && samplingFlag == 1) {
+        sample[EMG_Index] = exg.analogSample;
+        filteredSample[EMG_Index] = exg.filteredSample;
+        rectifiedSample[EMG_Index] = exg.EMGRectifiedSample;
+        envelopeSample[EMG_Index] = exg.EMGEnvelopeSample;
 
-	return status;
+        EMG_Index++;
+        if (EMG_Index >= EMG_BUF_LEN) {
+            EMG_Index = 0;
+        }
+
+        ResetSamplingFlag();
+    } else {
+        status = H2BR0_ERR_WRONGPARAMS;
+    }
+
+    return status;
 }
 
 /***************************************************************************/
