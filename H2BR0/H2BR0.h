@@ -253,6 +253,8 @@ Module_Status ECG_Sample(float *sample, float *filteredSample);
 Module_Status EOG_Sample(float *sample, float *filteredSample);
 Module_Status EEG_Sample(float *sample, float *filteredSample);
 Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample);
+Module_Status EnablePlot(uint8_t port);
+Module_Status DisablePlot(void) ;
 Module_Status EMG_SetThreshold(uint8_t threshold);
 Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
 Module_Status ECG_HeartRate(uint8_t *heartRate);

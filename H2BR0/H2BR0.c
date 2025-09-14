@@ -41,7 +41,8 @@ uint32_t Numofsamples1 ,timeout1;
 uint32_t Numofsamples2 ,timeout2;
 uint8_t flag ;
 uint8_t tofMode ;
-
+bool plotEnabled  =false ;
+uint8_t plotPort  ;
 /* Module Parameters */
 
 
@@ -1628,7 +1629,8 @@ Module_Status EXG_SignalProcessing(void) {
 	default:
 		status = H2BR0_ERR_WRONGPARAMS;
 	}
-
+	if (plotEnabled  == true)
+	{PlotToTerminal(plotPort );}
 	return status;
 }
 
@@ -1640,26 +1642,12 @@ float Loop_timeq;
 int ggm ,yy ,rre, mms,qq ;
 /* timer2 EXG special timer callback */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	ggm--;
-	  yy++;
-	  if (1 == rre) {
-	    start_timeq = HAL_GetTick();
-	    rre = 0;
-	  }
-	  end_timeq = HAL_GetTick();
-	  Loop_timeq = end_timeq - start_timeq;
-	  if (Loop_timeq >= 1000) {
-	    mms = Loop_timeq;
-	    rre = 1;
-	    qq = yy;
-	    yy = 0;
-	  }
+
 	if (htim->Instance == EXG_TIM) {
 		end_time = HAL_GetTick();
 		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 		Loop_time = end_time - start_time;
 		SetSamplingFlag();
-
 		vTaskNotifyGiveFromISR(EXGSignalProcessingHandle, &xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		start_time = HAL_GetTick();
@@ -1713,6 +1701,30 @@ Module_Status EXG_Init(InputSignal_EXG inputSignal) {
 	HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(exg.AdcValue), 1);
 
 	return status;
+}
+/***************************************************************************/
+/* Enabling signal plot on a given port.
+ * port: The communication port (e.g., UART, USB) to send the plotted data.
+ */
+Module_Status EnablePlot(uint8_t port) {
+    Module_Status status = H2BR0_OK;
+
+    plotPort = port;     // Store the selected port
+    plotEnabled = true;  // Enable plotting flag
+
+    return status;
+}
+
+/***************************************************************************/
+/* Disabling signal plot.
+ * This stops sending data for plotting.
+ */
+Module_Status DisablePlot(void) {
+    Module_Status status = H2BR0_OK;
+
+    plotEnabled = false;  // Disable plotting flag
+
+    return status;
 }
 
 /***************************************************************************/
@@ -1918,7 +1930,6 @@ Module_Status PlotToTerminal(uint8_t port) {
 	uint8_t status = H2BR0_OK;
 	uint8_t samplingFlag;
 	char sendData[80] = { 0 };
-
 	if (port == 0)
 		return H2BR0_ERR_WRONGPARAMS;
 
@@ -1928,14 +1939,19 @@ Module_Status PlotToTerminal(uint8_t port) {
 //    while ((xTaskGetTickCount() - startTime) < pdMS_TO_TICKS(Timeout))
 //    {
 
-	if (exg.inputSignalType == EMG)
-		sprintf(sendData,
-				"Analog:%5.2f | Filtered:%5.2f | Rectified:%5.2f | Envelope:%5.2f\r\n",
-				exg.analogSample, exg.filteredSample, exg.EMGRectifiedSample,
-				exg.EMGEnvelopeSample);
-	else
-		sprintf(sendData, "Analog:%5.2f | Filtered:%5.2f\r\n", exg.analogSample,
+	if (exg.inputSignalType == EMG) {
+
+		sprintf(sendData, "%5.2f,%5.2f,%5.2f,%5.2f\r\n",
+		        exg.analogSample,
+		        exg.filteredSample,
+		        exg.EMGRectifiedSample,
+		        exg.EMGEnvelopeSample);
+
+	} else {
+		memset(sendData, 0, sizeof(sendData));
+		sprintf(sendData, "%5.2f , %5.2f\r\n", exg.analogSample,
 				exg.filteredSample);
+	}
 
 	GetSamplingFlag(&samplingFlag);
 
