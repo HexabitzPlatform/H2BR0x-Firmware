@@ -27,12 +27,12 @@ float h[100], g[100] ,t[100],y[100];
 /***************************************************************************/
 /* User Task */
 void UserTask(void *argument){
-	EXG_Init(ECG);
+	EXG_Init(EEG);
 	/* put your code here, to run repeatedly. */
 	while(1){
 //		EMG_Sample(h, g,t,y);
-//		EnablePlot(1);
-		ECG_Sample(y, t);
+		EnablePlot(1);
+//		EEG_Sample(y, t);
 //		HAL_Delay(9000);
 //		DisablePlot();
 //		HAL_Delay(9000);
