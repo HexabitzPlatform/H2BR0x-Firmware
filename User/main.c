@@ -14,28 +14,29 @@
 /* Private Function Prototypes *********************************************/
 
 /* Main Function ***********************************************************/
-int main(void){
+int main(void) {
 
 	/* Initialize Module &  BitzOS */
 	Module_Init();
 
 	/* Don't place your code here */
-	for(;;){
+	for (;;) {
 	}
 }
-float h[100], g[100] ,t[100],y[100];
+float h[100], g[100], t[100], y[100];
 /***************************************************************************/
 /* User Task */
-void UserTask(void *argument){
+void UserTask(void *argument) {
 	EXG_Init(EEG);
 	/* put your code here, to run repeatedly. */
-	while(1){
+	while (1) {
 //		EMG_Sample(h, g,t,y);
 		EnablePlot(1);
 //		EEG_Sample(y, t);
-//		HAL_Delay(9000);
+		HAL_Delay(9000);
+		DisablePlot(1);
 //		DisablePlot();
-//		HAL_Delay(9000);
+		HAL_Delay(9000);
 //		EMG_Sample(h, g,t,y);
 //		HAL_Delay(9000);
 //		EEG_Sample(y, t);

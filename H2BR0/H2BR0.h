@@ -124,7 +124,10 @@
 #define EOG_SAMPLE_TIME                 10000 // micro sec	fs=100sps
 #define EEG_SAMPLE_TIME                 10000 // micro sec fs=100sps
 #define EMG_SAMPLE_TIME                 2000 //  micro sec fs=500sps
-
+#define ECG_BUF_LEN                     120
+#define EOG_BUF_LEN                     100
+#define EEG_BUF_LEN                     100
+#define EMG_BUF_LEN                     500
 #define HEART_RATE_MIN                  40    // bpm
 #define HEART_RATE_MAX                  120   // bpm
 #define HEART_RATE_ARRAY_SIZE           5
@@ -144,11 +147,7 @@
 #define MAX_TIMEOUT_MS		     0xFFFFFFFF
 
 
-#define STREAM_TO_PORT                  1
-#define STREAM_TO_Terminal              2
-#define MIN_PERIOD_MS			    	100
-
-#define NUM_MODULE_PARAMS		        10
+#define NUM_MODULE_PARAMS		        1
 
 /* Module-specific Type Definition *****************************************/
 /* Module-status Type Definition */
@@ -254,7 +253,7 @@ Module_Status EOG_Sample(float *sample, float *filteredSample);
 Module_Status EEG_Sample(float *sample, float *filteredSample);
 Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample);
 Module_Status EnablePlot(uint8_t port);
-Module_Status DisablePlot(void) ;
+Module_Status DisablePlot(uint8_t port) ;
 Module_Status EMG_SetThreshold(uint8_t threshold);
 Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
 Module_Status ECG_HeartRate(uint8_t *heartRate);
