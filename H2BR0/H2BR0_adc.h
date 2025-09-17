@@ -3,10 +3,11 @@
  All rights reserved
 
  File Name     : H2BR0_adc.h
- Description   : Header file provides configuration of the ADC instances.
-
- */
-
+ Description   : Header file for ADC configuration in the H2BR0 module.
+ ADC Interface: Declares functions and variables for ADC initialization to support EXG signal acquisition.
+ Exported Variables: Defines ADC1 handle for external use in EXG signal processing.
+ Exported Functions: Provides interface for ADC configuration (EXG_ADC).
+*/
 /* Define to prevent recursive inclusion ***********************************/
 #ifndef __ADC_H__
 #define __ADC_H__
@@ -22,7 +23,7 @@ extern "C" {
 extern ADC_HandleTypeDef hadc1;
 
 /* Exported Functions ******************************************************/
-extern void MX_ADC1_Init(void);
+extern void EXG_ADC(void);
 
 #ifdef __cplusplus
 }

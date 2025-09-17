@@ -3,15 +3,12 @@
  All rights reserved
 
  File Name     : H2BR0.c
- Description   : Source code for module H2BR0.
- 	 	 	 	 (Description_of_module)
-
-(Description of Special module peripheral configuration):
->>
->>
->>
-
- */
+ Description   : Manages EXG (ECG, EOG, EEG, EMG) signal processing and system operations.
+ Module_Peripheral_Init: Initialization of UART1-5, TIM2, GPIO ports A-B, and ADC for EXG signal acquisition.
+ CLI: Commands for enabling/disabling signal plotting, setting EMG thresholds, and sampling EXG signals.
+ Messages: Processes requests for EXG signal sampling and status checks (e.g., heart rate, eye blink, electrode status).
+ Module-specific functions: Signal filtering, heart rate calculation, eye blink detection, EMG pulse detection, and data plotting to terminal.
+*/
 
 /* Includes ****************************************************************/
 #include "BOS.h"
@@ -24,26 +21,23 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart5;
-//UART_HandleTypeDef huart6;
 TIM_HandleTypeDef htim2;  /* EXG special timer */
-TaskHandle_t EXGTaskHandle = NULL;
-TaskHandle_t EXGSignalProcessingHandle = NULL;
-EXG_t exg;
+
 /* Private Variables *******************************************************/
-bool plotEnabled  =false ;
-uint8_t plotPort  ;
-/* Module Parameters */
 uint16_t ECG_Index = 0;
 uint16_t EOG_Index = 0;
 uint16_t EEG_Index = 0;
 uint16_t EMG_Index = 0;
 uint32_t end_time, start_time;
 float Loop_time;
-/* Module exported parameters ------------------------------------------------*/
-/* Exported Typedef */
-ModuleParam_t ModuleParam[NUM_MODULE_PARAMS] = {};
+uint8_t plotPort = 0;
+bool plotEnabled = false;
+EXG_t exg;
+/* Module Parameters */
+ModuleParam_t ModuleParam[NUM_MODULE_PARAMS] = {0};
+
 /* Private Function Prototypes *********************************************/
-void MX_TIM2_Init(void);
+void EXG_timer(void);
 void Module_Peripheral_Init(void);
 void SetupPortForRemoteBootloaderUpdate(uint8_t port);
 void RemoteBootloaderUpdate(uint8_t src,uint8_t dst,uint8_t inport,uint8_t outport);
@@ -51,7 +45,6 @@ uint8_t ClearROtopology(void);
 Module_Status Module_MessagingTask(uint16_t code, uint8_t port, uint8_t src, uint8_t dst, uint8_t shift);
 
 /* Local Function Prototypes ***********************************************/
-//void EXGTask(void *argument);
 void EXGSignalProcessing(void *argument);
 void EXG_Enable();
 void EXG_Disable();
@@ -70,13 +63,10 @@ void EMG_Rectifying();
 void EMG_EnvelopeDetection();
 void CheckLeadsStatus(LeadsStatus_EXG *leadsStatus);
 Module_Status EXG_SignalProcessing(void);
-static bool StreamCommandParser(const int8_t *pcCommandString, const char **ppSensName, portBASE_TYPE *pSensNameLen,
-														bool *pPortOrCLI, uint32_t *pPeriod, uint32_t *pTimeout, uint8_t *pPort, uint8_t *pModule);
-/* Local Typedef related to stream functions */
-
+Module_Status PlotToTerminal(uint8_t port);
 /* Create CLI commands *****************************************************/
 
-///* CLI command structure ***************************************************/
+/* CLI command structure ***************************************************/
 
 
 /***************************************************************************/
@@ -492,8 +482,8 @@ void Module_Peripheral_Init(void) {
 	MX_USART4_UART_Init();
 	MX_USART5_UART_Init();
 
-	MX_TIM2_Init();
-	MX_ADC1_Init();
+	EXG_timer();
+	EXG_ADC();
 
 	//Circulating DMA Channels ON All Module
 	for (int i = 1; i <= NUM_OF_PORTS; i++) {
@@ -509,10 +499,6 @@ void Module_Peripheral_Init(void) {
 			dmaIndex[i - 1] = &(DMA1_Channel5->CNDTR);
 		}
 	}
-
-	xTaskCreate(EXGSignalProcessing, (const char*) "EXGSignalProcessingTask",
-			configMINIMAL_STACK_SIZE, NULL, osPriorityRealtime - osPriorityIdle,
-			&EXGSignalProcessingHandle);
 
 }
 
@@ -570,19 +556,6 @@ void RegisterModuleCLICommands(void) {
 }
 /***************************************************************************/
 /****************************** Local Functions ****************************/
-/***************************************************************************/
-void EXGSignalProcessing(void *argument) {
-
-	for (;;) {
-		// Wait for ISR notification
-		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-		// Process EXG Signal
-		EXG_SignalProcessing();
-	}
-
-}
-
 /***************************************************************************/
 void EXG_Enable() {
 	HAL_GPIO_WritePin(SDN_EXG_GPIO_PORT, SDN_EXG_PIN, GPIO_PIN_SET);
@@ -999,12 +972,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	if (htim->Instance == EXG_TIM) {
 		end_time = HAL_GetTick();
-		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+//		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 		Loop_time = end_time - start_time;
 		SetSamplingFlag();
-		vTaskNotifyGiveFromISR(EXGSignalProcessingHandle,
-				&xHigherPriorityTaskWoken);
-		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+//		vTaskNotifyGiveFromISR(EXGSignalProcessingHandle,
+//				&xHigherPriorityTaskWoken);
+//		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		start_time = HAL_GetTick();
 		EXG_SignalProcessing();
 	}
@@ -1052,16 +1025,16 @@ Module_Status EXG_Init(InputSignal_EXG inputSignal) {
 	}
 	Delay_ms(2000); /* avoiding transient state when module is power on */
 
-	HAL_TIM_Base_Start_IT(&HANDLER_Timer_EXG);
+	HAL_TIM_Base_Start_IT(&HANDLER_TIMER_EXG);
 	HAL_ADC_Start_DMA(&HANDLER_ADC_EXG, &(exg.AdcValue), 1);
 
 	return status;
 }
 /***************************************************************************/
-/* Enabling signal plot on a given port.
- * port: The communication port (e.g., UART, USB) to send the plotted data.
+/* Start sending the samples to the terminal.
+ * Note: This function must not be used with the sample functions before stopping them.
  */
-Module_Status EnablePlot(uint8_t port) {
+Module_Status Start_PlotToTerminal(uint8_t port) {
 	Module_Status status = H2BR0_OK;
 
 	plotPort = port;     // Store the selected port
@@ -1072,10 +1045,9 @@ Module_Status EnablePlot(uint8_t port) {
 }
 
 /***************************************************************************/
-/* Disabling signal plot.
- * This stops sending data for plotting.
+/* Stop sending the samples to the terminal.
  */
-Module_Status DisablePlot(uint8_t port) {
+Module_Status Stop_PlotToTerminal(uint8_t port) {
 	Module_Status status = H2BR0_OK;
 
 	plotEnabled = false;  // Disable plotting flag

@@ -20,7 +20,7 @@ void TIM_USEC_Init(void);
 void TIM_MSEC_Init(void);
 void MX_IWDG_Init(void);
 
-extern void MX_TIM2_Init(void); /* EXG special timer */
+extern void EXG_timer(void); /* EXG special timer */
 
 /* Exported Variables ******************************************************/
 TIM_HandleTypeDef htim16; /* micro-second delay counter */
@@ -53,7 +53,7 @@ void MX_IWDG_Init(void) {
 
 /***************************************************************************/
 /* EXG special timer */
-void MX_TIM2_Init(void) {
+void EXG_timer(void) {
 	TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
 	TIM_MasterConfigTypeDef sMasterConfig = { 0 };
 

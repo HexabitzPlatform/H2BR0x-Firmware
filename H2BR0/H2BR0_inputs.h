@@ -13,15 +13,15 @@
 #include "stm32g0xx_hal_adc.h"
 #include "stm32g0xx_hal_adc_ex.h"
 #include "string.h"
-/*This module includes an ADC on port P2 and P1.*/
+/*This module includes an ADC on port P3 and P4.*/
 /* ADC Macro Definitions ***************************************************/
 /* Port-ADC Definitions */
 #define ADC_CH1_PIN   		GPIO_PIN_2
 #define ADC_CH2_PIN   		GPIO_PIN_3
 #define ADC_CH3_PIN   		GPIO_PIN_0
 #define ADC_CH4_PIN   		GPIO_PIN_1
-#define ADC12_PORT  		P2
-#define ADC34_PORT			P1
+#define ADC12_PORT  		P4
+#define ADC34_PORT			P3
 #define ADC12_GPIO_PORT  	GPIOA
 #define ADC34_GPIO_PORT		GPIOA
 #define ADC_CH1_USART   	USART2

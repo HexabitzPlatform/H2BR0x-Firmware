@@ -3,9 +3,12 @@
  All rights reserved
 
  File Name     : H2BR0_adc.c
- Description   : Source Code provides configuration of the ADC instances.
-
- */
+ Description   : Configures the ADC for the H2BR0 module to support EXG signal acquisition.
+ ADC Configuration: Initializes ADC1 with 12-bit resolution, single-channel mode, and DMA for continuous data acquisition.
+ GPIO Setup: Configures PA4 as the analog input pin for ADC1 channel 4.
+ DMA Configuration: Sets up DMA2 Channel 1 for ADC data transfer in circular mode.
+ De-initialization: Provides functions to safely disable ADC and associated GPIO and DMA resources.
+*/
 
 /* Includes ****************************************************************/
 #include "H2BR0_adc.h"
@@ -17,7 +20,7 @@ DMA_HandleTypeDef hdma_adc1;
 /***************************************************************************/
 /* Configure ADC ***********************************************************/
 /***************************************************************************/
-void MX_ADC1_Init(void) {
+void EXG_ADC(void) {
 	ADC_ChannelConfTypeDef sConfig = { 0 };
 
 	hadc1.Instance = ADC1;

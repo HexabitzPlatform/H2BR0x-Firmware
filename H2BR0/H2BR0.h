@@ -1,17 +1,14 @@
 /*
  BitzOS (BOS) V0.4.0 - Copyright (C) 2017-2025 Hexabitz
  All rights reserved
- 
- File Name     : H2BR0.h
- Description   : Header file for module H2BR0.
- 	 	 	 	 (Description_of_module)
 
-(Description of Special module peripheral configuration):
->> Interrupt mode timer (in which the signal specified by the function is processed EXG_SignalProcessing).
->> ADC to read the analog signal of the signals.
->>
-
- */
+ File Name     : H2BR0.c
+ Description   : Manages EXG (ECG, EOG, EEG, EMG) signal processing and system operations.
+ Module_Peripheral_Init: Initialization of UART1-5, TIM2, GPIO ports A-B, and ADC for EXG signal acquisition.
+ CLI: Commands for enabling/disabling signal plotting, setting EMG thresholds, and sampling EXG signals.
+ Messages: Processes requests for EXG signal sampling and status checks (e.g., heart rate, eye blink, electrode status).
+ Module-specific functions: Signal filtering, heart rate calculation, eye blink detection, EMG pulse detection, and data plotting to terminal.
+*/
 
 /* Define to prevent recursive inclusion ***********************************/
 #ifndef H2BR0_H
@@ -47,7 +44,6 @@
 #define _USART3
 #define _USART4
 #define _USART5
-//#define _USART6
 
 /* Port-UART Mapping */
 #define UART_P1 &huart3
@@ -88,12 +84,6 @@
 #define	USART5_RX_PORT		GPIOB
 #define	USART5_AF			GPIO_AF8_USART5
 
-#define	USART6_TX_PIN		GPIO_PIN_8
-#define	USART6_RX_PIN		GPIO_PIN_9
-#define	USART6_TX_PORT		GPIOB
-#define	USART6_RX_PORT		GPIOB
-#define	USART6_AF			GPIO_AF8_USART6
-
 /* GPIO Pin Definition */
 #define SDN_EXG_PIN             GPIO_PIN_9
 #define SDN_EXG_GPIO_PORT       GPIOB
@@ -111,7 +101,7 @@
 /* Timer Definition */
 #define EXG_TIM                 TIM2
 #define EXG_TIM_PERIOD          TIM2->ARR
-#define HANDLER_Timer_EXG       htim2
+#define HANDLER_TIMER_EXG       htim2
 
 /* Indicator LED */
 #define _IND_LED_PORT			GPIOA
@@ -143,8 +133,8 @@
 #define ECG_THRESHOLD                   0.25  //  volt
 #define FILTER_TRANSIENT_STATE_SAMPLES  30
 #define SHMITH_SHIFT                    0.03 // volt
-#define MIN_PERIOD_MS		     100
-#define MAX_TIMEOUT_MS		     0xFFFFFFFF
+#define MIN_PERIOD_MS		            100
+#define MAX_TIMEOUT_MS		            0xFFFFFFFF
 
 
 #define NUM_MODULE_PARAMS		        1
@@ -234,7 +224,6 @@ extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart5;
-//extern UART_HandleTypeDef huart6;
 
 /* Define UART Init prototypes */
 extern void MX_USART1_UART_Init(void);
@@ -252,13 +241,12 @@ Module_Status ECG_Sample(float *sample, float *filteredSample);
 Module_Status EOG_Sample(float *sample, float *filteredSample);
 Module_Status EEG_Sample(float *sample, float *filteredSample);
 Module_Status EMG_Sample(float *sample, float *filteredSample, float *rectifiedSample, float *envelopeSample);
-Module_Status EnablePlot(uint8_t port);
-Module_Status DisablePlot(uint8_t port) ;
+Module_Status Start_PlotToTerminal(uint8_t port);
+Module_Status Stop_PlotToTerminal(uint8_t port) ;
 Module_Status EMG_SetThreshold(uint8_t threshold);
 Module_Status EMG_CheckPulse(uint8_t *EMGDetectionFlag, uint16_t *EMGDurationMsec);
 Module_Status ECG_HeartRate(uint8_t *heartRate);
 Module_Status EOG_CheckEyeBlink(EyeBlinkingStatus *eyeBlinkStatus);
-Module_Status PlotToTerminal(uint8_t port);
 Module_Status LeadsStatus(LeadsStatus_EXG *leadsStatus);
 
 #endif /* H2BR0_H */
